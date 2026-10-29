@@ -819,7 +819,8 @@
   // 工具分类显示（10-23 乔淼：全摆出来太占地方）：上面「常用」是 pin 了的，下面一排分类，一次只看一类；看哪一类记在这台电脑上
   const TOOLCAT_KEY = 'aiws:toolcat';
   function toolCards() {
-    const tools = B.tools || [], cats = [...CATS, ...new Set(tools.map(t => t.cat).filter(c => !CATS.includes(c)))].filter(c => c === '我的工具' || tools.some(t => t.cat === c));
+    // 「造工作流」不在工具区（乔淼 10-29）：只在上面工作流那一排「导入」旁边
+    const tools = (B.tools || []).filter(t => t.id !== 'wfbuild'), cats = [...CATS, ...new Set(tools.map(t => t.cat).filter(c => !CATS.includes(c)))].filter(c => c === '我的工具' || tools.some(t => t.cat === c));
     const pinned = (B.pinnedTools || []).map(id => tools.find(t => t.id === id)).filter(Boolean);
     let cat = ''; try { cat = localStorage.getItem(TOOLCAT_KEY) || ''; } catch {}
     if (!cats.includes(cat)) cat = cats[0];
@@ -2131,8 +2132,10 @@
   function cmdkData() {
     const files = (S.files || []).filter(f => f.kind !== 'dir' && !f.path.startsWith('.'));
     const P0 = (B.projects || []).filter(p => p.exists || p.inbox).map(p => ({ scope: 'project', group: '项目', name: p.inbox ? '收件箱' : p.name, meta: p.id === B.current ? '当前' : '', tile: `<span class="tile sm">${I(p.inbox ? 'inbox' : 'folder')}</span>`, run: () => switchProject(p.id) }));
-    const W = (B.workflows || []).map(w => ({ scope: 'app', group: '工作流', name: w.name, meta: '', tile: wfTile(w, 'sm'), run: () => openTab({ id: 'wf:' + w.id, wf: w.id }) }));
-    const T = (B.tools || []).map(t => ({ scope: 'app', group: '工具', name: t.name, meta: t.cat || '', tile: toolTile(t, 'sm'), run: () => openTab({ id: 'tool:' + t.id, tool: t.id }) }));
+    const toolItem = (t, group) => ({ scope: 'app', group, name: t.name, meta: group === '工具' ? t.cat || '' : '', tile: toolTile(t, 'sm'), run: () => openTab({ id: 'tool:' + t.id, tool: t.id }) });
+    const W = (B.workflows || []).map(w => ({ scope: 'app', group: '工作流', name: w.name, meta: '', tile: wfTile(w, 'sm'), run: () => openTab({ id: 'wf:' + w.id, wf: w.id }) }))
+      .concat((B.tools || []).filter(t => t.id === 'wfbuild').map(t => toolItem(t, '工作流'))); // 造工作流跟着工作流走，不算工具
+    const T = (B.tools || []).filter(t => t.id !== 'wfbuild').map(t => toolItem(t, '工具'));
     const F = files.sort((a, b) => b.mtime - a.mtime).map(f => ({ scope: 'file', group: '文件', name: f.path.split('/').pop(), hay: f.path, meta: f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : '', tile: `<span class="tile sm">${fileIcon(f.kind)}</span>`, run: () => openDoc(f.path) }));
     return { P0, W, T, F };
   }

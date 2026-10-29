@@ -243,7 +243,8 @@ function createRuntime(k) {
   return tpl.replace(/\\{\\{([^#^/}][^}]*)\\}\\}/g, function (_, k) { return v[k] == null ? '' : String(v[k]); });
 }`;
   // 「这一步用哪个 skill」下拉框（内容 1.4.1，T2 第 4 条）：造好的工作流里每一步都有一个，导入后直接下拉换 skill，不用再找 AI。
-  // 选项来自工作站发来的 AIWS.skills（这个项目的 AI 装着的 skill：名字、用途），按用途分组；选了什么记在页面自己的 localStorage 里
+  // 选项来自工作站发来的 AIWS.skills（这个项目的 AI 装着的 skill：名字、用途），按用途分组；选了什么记在页面自己的 localStorage 里。
+  // skillLine 第三个参数是这一步填的 {输入名: 值}，换了 skill 也带上，没填的跳过（乔淼 10-29）
   const SKILL_PICK_JS = `function skillPick(sel, def, key) {
   var saved = ''; try { saved = localStorage.getItem(key) || ''; } catch (e) {}
   function add(parent, value, text) { var o = document.createElement('option'); o.value = value; o.textContent = text; parent.appendChild(o); }
@@ -260,8 +261,10 @@ function createRuntime(k) {
   window.addEventListener('aiws:skills', fill);
   fill();
 }
-function skillLine(name, what) {
-  return '请用「' + name + '」skill 完成这一步：' + what + '。严格按这个 skill 的步骤、硬约束和输出格式执行；skill 里要停下问我的地方照常停下。';
+function skillLine(name, what, filled) {
+  var s = '请用「' + name + '」skill 完成这一步：' + what + '。严格按这个 skill 的步骤、硬约束和输出格式执行；skill 里要停下问我的地方照常停下。', a = [];
+  for (var k in filled || {}) if (filled[k]) a.push('- ' + k + '：' + filled[k]);
+  return a.length ? s + '\\n\\n这一步我填的：\\n' + a.join('\\n') : s;
 }`;
   function writeToolCatalog(p) {
     const type = { text: '单行', area: '多行', select: '选择', skill: 'skill', skills: '多选skill' };

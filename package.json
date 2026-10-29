@@ -1,7 +1,7 @@
 {
   "name": "popper-framework",
   "productName": "POPPER Framework",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "POPPER（AI学术工作站）的框架：界面、设置、调你自己的 AI、产出落到项目文件夹；不带课程的工作流和工具",
   "author": "乔淼PhD",
