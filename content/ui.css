@@ -676,9 +676,8 @@ body.resizing{cursor:col-resize;user-select:none}
 /* 左栏顶部：logo + 名字（10-18 第三轮，POPPER） */
 .brand{display:flex;align-items:center;gap:11px;height:70px;flex:none;padding:0 20px;color:var(--ink);border-bottom:1px solid var(--line)}
 .brand svg{flex:none}
-.brand .wm{font-size:18px;font-weight:700;letter-spacing:.22em}
-.brand .bname{display:flex;flex-direction:column;gap:3px;line-height:1}
-.brand .bsub{font-size:12px;color:var(--faint);letter-spacing:.08em}
+.brand .wmark{flex:none;overflow:visible}
+.brand .wmark .wsub{fill:var(--faint)}
 
 
 /* 添加工具 ·「用哪个 skill」边打字边搜（10-23） */

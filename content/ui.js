@@ -41,9 +41,9 @@
   const UI = {}; // 每个项目自己的界面状态：开着哪些标签页
   let STO = null; // 配置里上次算出来的空间占用（关掉配置再打开要重新点「查看」）
   const ui = () => (UI[B.current] = UI[B.current] || { tabs: [{ id: 'store' }], active: 'store' });
-  // 名字和 logo（10-18 第三轮）：POPPER，黑天鹅（波普尔讲可证伪性的例子）。只是显示名，数据文件夹还叫「AI学术工作站」
-  // LOGO：POPPER 黑天鹅（10-19 换成和 App 图标同一只，原稿 设计/图标/popper-logo.svg 是 100×100，这里缩进 24×24）
-  const BRAND = 'POPPER', LOGO = '<g transform="translate(-2.22 -2.48) scale(.295)"><path d="M10.5 50.2 C15.5 53.5,19.5 55.2,22.5 55 C27 48.2,36.5 45.6,45 46 C53 46.5,59 49,62.4 52.8 C61.4 47,60.9 41.2,61.9 37 C63.2 31.4,67.6 27.6,73.6 27.1 C78.4 26.7,81.6 27.8,83.1 30.6 C84 32.4,84.3 34,84.7 35.6 C85.6 38.2,87.1 41,87.9 43.4 C88.3 44.8,87.4 45.8,86.5 45.1 C85.2 43.6,83.6 40.8,82.2 38.6 C81.3 37.2,79.8 36.4,78.2 36.2 C75.4 35.6,72.6 35.2,70.8 37.6 C68.8 40,68.4 43.4,68.9 47.2 C69.5 51.4,72.1 55.2,72.9 59.2 C73.8 64.4,69.6 69.8,62 70.6 C45 71.6,33 71.3,26 69.9 C19 68.4,14 63.8,11.8 59.6 C11 58.4,9.6 57,8.2 55.6 C10.6 56,12.6 55.8,14.4 55.1 C13.2 53.6,11.8 51.8,10.5 50.2Z" fill="currentColor"/></g>';
+  // 名字和 logo：POPPER framework。天鹅和 POPPER 同一只，框架里只画轮廓线（乔淼 10-29 定「线稿天鹅、细线」，App 图标 构建素材/图标.svg 同一套），
+  // 原稿 100×100、线宽 2.4，这里缩进 24×24。左上角的字是「POPPER / framework」两行，用 SVG 的 textLength 定成一样宽（见 renderLeft 里的 brand）
+  const BRAND = 'POPPER', LOGO = '<g transform="translate(-2.22 -2.48) scale(.295)"><path d="M10.5 50.2 C15.5 53.5,19.5 55.2,22.5 55 C27 48.2,36.5 45.6,45 46 C53 46.5,59 49,62.4 52.8 C61.4 47,60.9 41.2,61.9 37 C63.2 31.4,67.6 27.6,73.6 27.1 C78.4 26.7,81.6 27.8,83.1 30.6 C84 32.4,84.3 34,84.7 35.6 C85.6 38.2,87.1 41,87.9 43.4 C88.3 44.8,87.4 45.8,86.5 45.1 C85.2 43.6,83.6 40.8,82.2 38.6 C81.3 37.2,79.8 36.4,78.2 36.2 C75.4 35.6,72.6 35.2,70.8 37.6 C68.8 40,68.4 43.4,68.9 47.2 C69.5 51.4,72.1 55.2,72.9 59.2 C73.8 64.4,69.6 69.8,62 70.6 C45 71.6,33 71.3,26 69.9 C19 68.4,14 63.8,11.8 59.6 C11 58.4,9.6 57,8.2 55.6 C10.6 56,12.6 55.8,14.4 55.1 C13.2 53.6,11.8 51.8,10.5 50.2Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></g>';
   const S = { files: [], fileMode: 'recent', filesOf: null, runs: [], expanded: null, skills: {} };
   window.__wfTests = {}; // 开发用：隔离测试工作流交回来的检查结果
 
@@ -234,7 +234,7 @@
     const plain = list0.filter(p => !p.inbox).map(row).join(''), inbox = list0.filter(p => p.inbox).map(row).join('');
     const cards = inbox + (inbox ? '<div class="pdiv0"></div>' : '') + `<div class="lhead"><span class="grow">项目</span><button class="ib sm" data-act="add" title="新建或打开项目">${I('plus')}</button></div>` + plain;
     const cp = proj(); document.title = (cp && !cp.inbox ? cp.name + ' · ' : '') + BRAND + ' Framework';
-    put($('#left'), `<div class="brand" title="${BRAND} · 开发：乔淼PhD"><svg viewBox="0 4 24 16" width="39" height="26">${LOGO}</svg><span class="bname"><span class="wm">${BRAND}</span><span class="bsub">Framework</span></span></div>
+    put($('#left'), `<div class="brand" title="${BRAND} · 开发：乔淼PhD"><svg viewBox="0 4 24 16" width="39" height="26">${LOGO}</svg><svg class="wmark" viewBox="0 0 96 34" width="96" height="34" role="img" aria-label="${BRAND} framework"><text x="0" y="15" font-size="18" font-weight="700" textLength="95" lengthAdjust="spacing" fill="currentColor">${BRAND}</text><text x="0.5" y="31" font-size="12" textLength="94" lengthAdjust="spacing" class="wsub">framework</text></svg></div>
       <div class="scroll scroll-y">${cards}</div>
       <div class="leftfoot">${updHTML()}<button class="btn ghost small" data-act="settings">${I('sliders')}AI学术环境配置</button><div class="motto" title="Karl Popper">All life is problem-solving.</div></div>`);
     const lf = $('#l-files'); if (lf && lf.__html === undefined) renderFiles(); // 左栏整块重写过：文件区是新的空壳，补画

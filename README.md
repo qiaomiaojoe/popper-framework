@@ -1,8 +1,9 @@
 <p align="center">
-  <img src="docs/images/icon.png" width="96" alt="POPPER Framework">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.svg">
+    <img src="docs/images/logo-light.svg" width="300" alt="POPPER framework">
+  </picture>
 </p>
-
-<h1 align="center">POPPER Framework</h1>
 
 <p align="center">
   <b>做你自己的 AI 学术工作台。</b><br>
