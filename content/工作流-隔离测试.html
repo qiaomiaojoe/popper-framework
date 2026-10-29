@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>隔离测试</title>
+<script type="application/json" id="aiws-manifest">
+{"名称":"隔离测试","标识":"isolation-test","类型":"测试","版本":"1","作者":"开发用","图标":"🧪",
+ "一句话":"开发模式才出现：检查工作流碰不到工作站、也碰不到别的工作流",
+ "工作站文案":[["单独在浏览器里打开时，下面的检查没有意义。","在工作站里打开：下面是实测结果。"]]}
+</script>
+<style>
+body{font:14px/1.6 -apple-system,"PingFang SC",sans-serif;padding:20px 28px;background:#FAF7F2;color:#2D2D2D}
+h2{margin:0 0 4px} .muted{color:#6B6B6B;font-size:13px}
+li{margin:5px 0} .ok{color:#3f7d3f} .bad{color:#c0392b}
+button{margin-top:14px;padding:8px 16px;border:0;border-radius:8px;background:#B8834A;color:#fff;font:inherit;cursor:pointer}
+</style></head><body>
+<h2>🧪 工作流隔离测试 · <span id="who"></span></h2>
+<p class="muted" id="mode">单独在浏览器里打开时，下面的检查没有意义。</p>
+<ul id="r"></ul>
+<button id="copy">复制 测试 prompt</button>
+<script>
+var me = (window.AIWS && AIWS.workflow && AIWS.workflow.id) || location.hostname;
+document.getElementById('who').textContent = me;
+var R = [];
+function rec(name, pass, detail) {
+  R.push({ name: name, pass: pass, detail: detail || '' });
+  var li = document.createElement('li'); li.className = pass ? 'ok' : 'bad';
+  li.textContent = (pass ? '✓ ' : '✗ ') + name + (detail ? '：' + detail : '');
+  document.getElementById('r').appendChild(li);
+}
+(async function () {
+  var main = (location.ancestorOrigins && location.ancestorOrigins[0]) || (document.referrer ? new URL(document.referrer).origin : '');
+  rec('工作站给了「桥」', !!window.AIWS, window.AIWS ? '工作流：' + AIWS.workflow.name + '；项目：' + (AIWS.project ? AIWS.project.name : '还没有（第 2 步接上）') : '没有 window.AIWS');
+  try { var t = parent.document.title; rec('读不到工作站的页面', false, '读到了标题：' + t); } catch (e) { rec('读不到工作站的页面', true, e.name); }
+  try { var r = await fetch(main + '/__api/config', { credentials: 'include' }); rec('调不了工作站的接口（读）', r.status === 401 || r.status === 403, '服务器回 ' + r.status); }
+  catch (e) { rec('调不了工作站的接口（读）', true, '浏览器拦下了'); }
+  try { var r2 = await fetch(main + '/__api/recheck', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' }); rec('调不了工作站的接口（写）', r2.status === 401 || r2.status === 403, '服务器回 ' + r2.status); }
+  catch (e) { rec('调不了工作站的接口（写）', true, '浏览器拦下了'); }
+  rec('拿不到工作站的登录凭证', !/(^|;\s*)popperfw\d+=/.test(document.cookie), document.cookie ? '看到的 cookie：' + document.cookie : '一个 cookie 都看不到');
+  try {
+    var mine = 'seen-by-' + location.hostname; // 用地址作记录名：每个工作流只该看到自己地址下的记录
+    localStorage.setItem(mine, String(Date.now()));
+    var others = Object.keys(localStorage).filter(function (k) { return /^seen-by-wf-/.test(k) && k !== mine; });
+    rec('自己的浏览器存储能用', localStorage.getItem(mine) !== null, '');
+    rec('看不到别的工作流的存储', others.length === 0, others.length ? '看到了：' + others.join('、') : '只看得到自己的');
+  } catch (e) { rec('自己的浏览器存储能用', false, e.name); }
+  try { var h = top.location.href; rec('读不到外层窗口的地址', false, h); } catch (e) { rec('读不到外层窗口的地址', true, e.name); }
+  // 只有开发测试才这样直接发结果；正式工作流不需要
+  try { parent.postMessage({ __aiwsTest: 1, id: me, results: R }, main || '*'); } catch (e) {}
+})();
+document.getElementById('copy').onclick = function () {
+  navigator.clipboard.writeText('这是一段测试指令（来自隔离测试工作流）：请回复「收到」，不要做别的事。');
+};
+</script>
+</body></html>

@@ -1,0 +1,11 @@
+POPPER Framework
+Copyright 2026 乔淼PhD
+
+本项目以 Apache License 2.0 授权，全文见 LICENSE。
+
+「POPPER」名称和黑天鹅图标是乔淼PhD 的标识，不在 Apache License 2.0 的授权范围内。
+对外发布本项目的修改版时，请换用你自己的名称和图标。
+
+本项目包含以下第三方组件：
+- PDF.js（content/pdf.min.mjs、content/pdf.worker.min.mjs），Mozilla Foundation，
+  Apache License 2.0，许可文本见 content/pdfjs-LICENSE.txt

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="POPPER">
+<meta name="theme-color" content="#FAF8F3">
+<title>POPPER</title>
+<!-- 手机远程（内容 1.3.13，见 remote.cjs）：手机上看任务、回复、停止、跟 AI 说、开始待办、看产出。只调 /api/ 白名单里的接口 -->
+<style>
+:root{--bg:#FAF8F3;--card:#FFFFFF;--panel:#F3EFE7;--ink:#1A1814;--text:#2B2822;--soft:#6F695E;--faint:#A59F93;--border:#E5E0D5;--line:#EEEAE2;
+  --amber:#B8834A;--amber-bg:#F6ECDF;--amber-ink:#8A5D2C;--blue:#4B74A0;--blue-bg:#EAF0F7;--success:#557F4C;--success-bg:#E9F1E4;--rose:#B5574B;--rose-bg:#F8E8E4;
+  --btn:#1F1C17;--btn-ink:#fff;
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#1B1A17;--card:#25231F;--panel:#2C2A25;--ink:#F2EEE6;--text:#E4DFD4;--soft:#ABA496;--faint:#7C766B;--border:#3A372F;--line:#322F29;
+  --amber:#D19A5E;--amber-bg:#3A2E20;--amber-ink:#E5B57F;--blue:#7FA3CB;--blue-bg:#232D3A;--success:#8DB582;--success-bg:#25301F;--rose:#DA857A;--rose-bg:#3A2522;--btn:#F2EEE6;--btn-ink:#1B1A17}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--font);-webkit-text-size-adjust:100%}
+body{padding:0 0 calc(76px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+header h1{font-size:17px;margin:0;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button.back{border:0;background:none;color:var(--blue);font-size:17px;padding:10px 14px 10px 0;margin:-10px 0;min-width:72px;text-align:left}
+main{padding:12px 16px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--card);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:13px;color:var(--soft)}
+nav button.on{color:var(--ink);font-weight:600}
+nav b{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--amber);color:#fff;font-size:11px;line-height:18px}
+.sec{font-size:12px;color:var(--faint);margin:16px 2px 6px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.t{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sub{font-size:12px;color:var(--soft);margin-top:2px}
+.say{font-size:13px;color:var(--soft);margin-top:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.chip{font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap;background:var(--panel);color:var(--soft)}
+.chip.waiting{background:var(--amber-bg);color:var(--amber-ink)}.chip.running,.chip.queued,.chip.stopping{background:var(--blue-bg);color:var(--blue)}
+.chip.done{background:var(--success-bg);color:var(--success)}.chip.failed{background:var(--rose-bg);color:var(--rose)}
+.card.waiting{border-color:var(--amber)}
+button.btn{border:0;border-radius:10px;background:var(--btn);color:var(--btn-ink);font-size:15px;padding:10px 16px}
+button.btn.ghost{background:var(--panel);color:var(--text)}
+button.btn.small{font-size:13px;padding:6px 12px;border-radius:8px}
+button:disabled{opacity:.5}
+textarea,input,select{width:100%;font:16px var(--font);color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+textarea{min-height:96px;resize:vertical}
+.empty{color:var(--faint);text-align:center;padding:40px 0}
+.err{background:var(--rose-bg);color:var(--rose);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px}
+.turn{margin:14px 0}
+.who{font-size:12px;color:var(--faint);margin-bottom:4px}
+.me{background:var(--blue-bg);border-radius:12px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}
+.md{word-break:break-word;overflow-wrap:anywhere}
+.md h1,.md h2,.md h3,.md h4{color:var(--ink);line-height:1.35;margin:14px 0 6px}.md h1{font-size:19px}.md h2{font-size:17px}.md h3,.md h4{font-size:15px}
+.md p{margin:6px 0}.md ul,.md ol{padding-left:22px;margin:6px 0}
+.md table{border-collapse:collapse;display:block;overflow-x:auto;font-size:13px;margin:8px 0}.md td,.md th{border:1px solid var(--border);padding:4px 8px;text-align:left;vertical-align:top}
+.md pre{background:var(--panel);padding:10px;border-radius:8px;overflow-x:auto;font:12px/1.5 var(--mono)}.md code{font:13px var(--mono);background:var(--panel);padding:1px 4px;border-radius:4px}
+.md blockquote{margin:6px 0;padding-left:10px;border-left:3px solid var(--border);color:var(--soft)}
+.files a{display:block;padding:9px 0;border-top:1px solid var(--line);color:var(--blue);text-decoration:none;word-break:break-all;font-size:14px}
+.files a:first-child{border-top:0}
+.bar{position:fixed;left:0;right:0;bottom:calc(52px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);padding:8px 16px;display:flex;gap:8px;align-items:flex-end;z-index:4}
+.bar textarea{min-height:44px;max-height:160px}
+.steps{font-size:13px;color:var(--soft);margin-top:6px}
+.att{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.att span{font-size:12px;background:var(--panel);border-radius:8px;padding:4px 8px}
+.chk{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--faint);flex:none;background:none}
+.chk.on{background:var(--success);border-color:var(--success)}
+#toast{position:fixed;left:50%;bottom:calc(130px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:86vw;z-index:9}
+#toast.on{opacity:.94}
+</style>
+</head>
+<body>
+<header><button class="back" id="back" hidden>‹ 返回</button><h1 id="title">POPPER</h1></header>
+<main id="main"><div class="empty">加载中…</div></main>
+<nav id="nav" hidden><button data-tab="runs">任务</button><button data-tab="todos">待办</button><button data-tab="ask">跟 AI 说</button></nav>
+<div id="toast"></div>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ST = { queued: '排队', running: '执行中', stopping: '停止中', waiting: '等你回复', done: '完成', failed: '出错', stopped: '已停止' };
+const S = { projects: [], runs: [], todos: [], tab: 'runs', attach: [] };
+let timer = null, view = 0; // view：每次换页加一，晚到的旧页面不画
+
+async function api(route, method = 'GET', data) {
+  const q = method === 'GET' && data ? '?' + new URLSearchParams(data) : '';
+  const r = await fetch('/api/' + route + q, { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Popper': '1' }, body: method !== 'GET' && data ? JSON.stringify(data) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { showPair(); throw Error(j.error || '要先配对'); }
+  if (!r.ok) throw Error(j.error || '出错了：' + r.status);
+  return j;
+}
+function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 2600); }
+const pname = id => (S.projects.find(p => p.id === id) || {}).name || '';
+const ago = iso => { if (!iso) return ''; const d = new Date(iso), m = (Date.now() - d) / 60000; return m < 1 ? '刚刚' : m < 60 ? Math.round(m) + ' 分钟前' : m < 1440 ? Math.round(m / 60) + ' 小时前' : `${d.getMonth() + 1}-${d.getDate()}`; };
+
+// 小型 Markdown（和电脑上的 ui.js md() 一样的规则）
+function md(src) {
+  const L = String(src).replace(/\r/g, '').replace(/<!--[\s\S]*?-->\n?/g, '').split('\n'); let out = '', i = 0;
+  const inl = x => esc(x).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<i>$2</i>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const row = x => x.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  const isBlock = x => /^(#{1,6}\s|>|\s*[-*+]\s|\s*\d+[.)]\s|\s*\||```|\s*(-{3,}|\*{3,})\s*$)/.test(x);
+  while (i < L.length) {
+    const l = L[i]; let m;
+    if (/^```/.test(l)) { const b = []; i++; while (i < L.length && !/^```/.test(L[i])) b.push(L[i++]); i++; out += `<pre>${esc(b.join('\n'))}</pre>`; continue; }
+    if ((m = l.match(/^(#{1,6})\s+(.*)/))) { out += `<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`; i++; continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { out += '<hr>'; i++; continue; }
+    if (/^\s*\|/.test(l) && i + 1 < L.length && /^\s*\|?\s*:?-{2,}/.test(L[i + 1])) {
+      const hd = row(l); i += 2; let body = '';
+      while (i < L.length && /^\s*\|/.test(L[i])) { body += '<tr>' + row(L[i]).map(c => `<td>${inl(c)}</td>`).join('') + '</tr>'; i++; }
+      out += `<table><tr>${hd.map(c => `<th>${inl(c)}</th>`).join('')}</tr>${body}</table>`; continue;
+    }
+    if (/^>\s?/.test(l)) { const b = []; while (i < L.length && /^>\s?/.test(L[i])) b.push(L[i++].replace(/^>\s?/, '')); out += `<blockquote>${b.map(inl).join('<br>')}</blockquote>`; continue; }
+    if (/^\s*[-*+]\s+/.test(l)) { const b = []; while (i < L.length && /^\s*[-*+]\s+/.test(L[i])) b.push(L[i++].replace(/^\s*[-*+]\s+/, '')); out += `<ul>${b.map(x => `<li>${inl(x)}</li>`).join('')}</ul>`; continue; }
+    if (/^\s*\d+[.)]\s+/.test(l)) { const b = []; while (i < L.length && /^\s*\d+[.)]\s+/.test(L[i])) b.push(L[i++].replace(/^\s*\d+[.)]\s+/, '')); out += `<ol>${b.map(x => `<li>${inl(x)}</li>`).join('')}</ol>`; continue; }
+    if (!l.trim()) { i++; continue; }
+    const b = [L[i++]]; while (i < L.length && L[i].trim() && !isBlock(L[i])) b.push(L[i++]);
+    out += `<p>${b.map(inl).join('<br>')}</p>`;
+  }
+  return out;
+}
+
+function frame(title, back) {
+  $('#title').textContent = title; $('#back').hidden = !back;
+  $('#nav').hidden = false; document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', !back && b.dataset.tab === S.tab));
+  const w = S.runs.filter(r => r.status === 'waiting').length;
+  $('#nav [data-tab=runs]').innerHTML = '任务' + (w ? `<b>${w}</b>` : '');
+  const old = document.querySelector('.bar'); if (old) old.remove();
+}
+
+// ---------- 配对 ----------
+function showPair(msg) {
+  clearInterval(timer); $('#nav').hidden = true; $('#back').hidden = true; $('#title').textContent = '配对这部手机';
+  $('#main').innerHTML = `<div class="card"><p style="margin-top:0">在电脑上打开 POPPER →「AI学术环境配置」→「手机远程」，点「配对一部手机」，把显示的 6 位数字输在这里。</p>
+    ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
+    <input id="pcode" inputmode="numeric" maxlength="6" placeholder="6 位配对码" autocomplete="one-time-code">
+    <input id="pname" maxlength="30" placeholder="给这部手机起个名字（可不填）" style="margin-top:8px">
+    <button class="btn" id="pgo" style="width:100%;margin-top:12px">配对</button></div>
+    <p class="sub" style="padding:0 4px">配好以后，可以在 Safari 里「分享 → 添加到主屏幕」，下次直接点图标打开。</p>`;
+  $('#pgo').onclick = async () => {
+    const r = await fetch('/pair', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Popper': '1' }, body: JSON.stringify({ code: $('#pcode').value, name: $('#pname').value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return showPair(j.error || '没配上');
+    toast('配好了'); boot();
+  };
+}
+
+// ---------- 任务 ----------
+async function loadRuns() { const [p, r] = await Promise.all([api('projects'), api('runs')]); S.projects = p.projects || []; S.runs = r; }
+function runCard(r) {
+  const said = r.status === 'failed' ? r.error : r.status === 'running' ? ((r.steps || []).slice(-1)[0] || {}).label && `${r.steps.slice(-1)[0].label} ${r.steps.slice(-1)[0].target || ''}` : r.lastMessage;
+  return `<div class="card ${r.status}" data-run="${esc(r.id)}"><div class="row"><div class="grow"><div class="t">${esc(r.title)}</div><div class="sub">${esc(pname(r.project))} · ${ago(r.endedAt || r.createdAt)}</div></div><span class="chip ${r.status}">${ST[r.status] || r.status}</span></div>${said ? `<div class="say">${esc(String(said).slice(0, 240))}</div>` : ''}</div>`;
+}
+async function showRuns() {
+  S.tab = 'runs'; const me = view;
+  try { await loadRuns(); } catch (e) { if (me === view) $('#main').innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  if (me !== view) return;
+  frame('任务');
+  const g = k => S.runs.filter(r => k.includes(r.status));
+  const sec = (name, list) => list.length ? `<div class="sec">${name}</div>${list.map(runCard).join('')}` : '';
+  $('#main').innerHTML = (sec('等你回复', g(['waiting'])) + sec('在做', g(['running', 'stopping', 'queued'])) + sec('最近', g(['done', 'failed', 'stopped']).slice(0, 20))) || '<div class="empty">还没有任务</div>';
+  document.querySelectorAll('[data-run]').forEach(c => c.onclick = () => { location.hash = 'run=' + c.dataset.run; });
+}
+async function showRun(id) {
+  let r, conv; const me = view;
+  try { [r, conv] = await Promise.all([api('runs/' + id), api('runs/' + id + '/conversation')]); if (!S.projects.length) await loadRuns(); }
+  catch (e) { if (me !== view) return; frame('任务', true); return $('#main').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  if (me !== view) return;
+  const keep = document.querySelector('.bar textarea'), draft = keep ? keep.value : '';
+  frame(r.title, true);
+  const turns = (conv.turns || []).map((t, i) => `${i && t.ask ? `<div class="turn"><div class="who">你</div><div class="me">${esc(t.ask.trim())}</div></div>` : ''}${t.reply ? `<div class="turn"><div class="who">AI</div><div class="md">${md(t.reply)}</div></div>` : ''}${t.error ? `<div class="err">${esc(t.error)}</div>` : ''}`).join('');
+  const steps = ['running', 'stopping'].includes(r.status) ? `<div class="steps">${(r.steps || []).slice(-4).map(s => esc(`${s.label} ${s.target || ''}`)).join('<br>')}</div>` : '';
+  const outs = r.outputs || [];
+  $('#main').innerHTML = `<div class="row"><span class="chip ${r.status}">${ST[r.status]}</span><span class="sub grow">${esc(pname(r.project))}</span>
+      ${['running', 'queued'].includes(r.status) ? '<button class="btn small ghost" id="stop">停止</button>' : ''}${['failed', 'stopped'].includes(r.status) ? '<button class="btn small ghost" id="retry">重试</button>' : ''}</div>
+    ${r.error && r.status === 'failed' ? `<div class="err">${esc(r.error)}</div>` : ''}${steps}
+    ${turns || '<div class="empty">AI 还没说话</div>'}
+    ${outs.length ? `<div class="sec">这个任务新建或改过的文件</div><div class="card files">${outs.map(f => `<a data-from="${esc(id)}" href="#file=${encodeURIComponent(r.project)}/${encodeURIComponent(f)}">${esc(f)}</a>`).join('')}</div>` : ''}
+    <div style="height:70px"></div>`;
+  document.querySelectorAll('.files a[data-from]').forEach(a => a.onclick = () => { S.fileFrom = a.dataset.from; });
+  const st = $('#stop'); if (st) st.onclick = async () => { try { await api(`runs/${id}/stop`, 'POST', {}); toast('停下了'); showRun(id); } catch (e) { toast(e.message); } };
+  const rt = $('#retry'); if (rt) rt.onclick = async () => { try { await api(`runs/${id}/retry`, 'POST', {}); toast('重新开始了'); showRun(id); } catch (e) { toast(e.message); } };
+  if (['waiting', 'done', 'failed', 'stopped'].includes(r.status)) {
+    const bar = document.createElement('div'); bar.className = 'bar';
+    bar.innerHTML = `<textarea rows="1" placeholder="${r.status === 'waiting' ? '回复 AI' : '接着说'}"></textarea><button class="btn">发送</button>`;
+    document.body.appendChild(bar);
+    const ta = bar.querySelector('textarea'); ta.value = draft;
+    bar.querySelector('button').onclick = async () => {
+      const text = ta.value.trim(); if (!text) return;
+      try { await api(`runs/${id}/reply`, 'POST', { text }); ta.value = ''; toast('发出去了'); showRun(id); } catch (e) { toast(e.message); }
+    };
+  }
+  if (!draft) window.scrollTo(0, document.body.scrollHeight);
+}
+
+// ---------- 看文件 ----------
+async function showFile(spec) {
+  const i = spec.indexOf('/'), proj = decodeURIComponent(spec.slice(0, i)), rel = decodeURIComponent(spec.slice(i + 1));
+  const url = `/api/file/${encodeURIComponent(proj)}/${rel.split('/').map(encodeURIComponent).join('/')}`;
+  frame(rel.split('/').pop(), true); const me = view;
+  if (/\.(md|txt|csv|json|log)$/i.test(rel)) {
+    try { const r = await fetch(url, { credentials: 'same-origin' }); if (!r.ok) throw Error((await r.json().catch(() => ({}))).error || '打不开');
+      const t = await r.text(); if (me !== view) return; $('#main').innerHTML = /\.md$/i.test(rel) ? `<div class="md">${md(t)}</div>` : `<pre class="md" style="white-space:pre-wrap">${esc(t)}</pre>`; }
+    catch (e) { $('#main').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  } else if (/\.(png|jpe?g|gif|webp)$/i.test(rel)) $('#main').innerHTML = `<img src="${esc(url)}" style="max-width:100%">`;
+  else $('#main').innerHTML = `<div class="card"><p style="margin-top:0">${esc(rel)}</p><a class="btn" style="display:inline-block;text-decoration:none" href="${esc(url)}" target="_blank" rel="noopener">在手机上打开</a><p class="sub">Word、PDF 会用手机自带的预览打开。</p></div>`;
+}
+
+// ---------- 待办 ----------
+async function showTodos() {
+  S.tab = 'todos'; const me = view;
+  let d; try { d = await api('todos'); if (!S.projects.length) await loadRuns(); } catch (e) { if (me === view) $('#main').innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  if (me !== view) return;
+  frame('待办');
+  const items = d.items.filter(t => t.status !== 'done');
+  $('#main').innerHTML = items.length ? items.map(t => `<div class="card"><div class="row"><button class="chk" data-done="${esc(t.id)}" title="做完了"></button><div class="grow"><div class="t">${esc(t.title)}</div><div class="sub">${esc(t.projectName)} · ${esc(t.from && t.from.label || '')}</div></div>
+      ${t.act ? (t.act.type === 'plan' ? '<span class="sub">到电脑上看梳理计划</span>' : `<button class="btn small" data-act="${esc(t.id)}">${t.status === 'started' ? '再开' : '开始'}</button>`) : t.run && t.status !== 'stuck' ? `<button class="btn small ghost" data-open="${esc(t.run)}">看看</button>` : t.wait ? '<span class="sub">先在电脑上「照这样做」</span>' : `<button class="btn small" data-start="${esc(t.id)}">${t.status === 'stuck' ? '重开' : '开始'}</button>`}</div></div>`).join('')
+    : '<div class="empty">没有要做的事</div>';
+  document.querySelectorAll('[data-start]').forEach(b => b.onclick = async () => { b.disabled = true; try { const r = await api('todos/start', 'POST', { id: b.dataset.start }); toast('开始了'); location.hash = 'run=' + r.run.id; } catch (e) { toast(e.message); b.disabled = false; } });
+  // 「下一步建议」放进来的：后台能做的直接开任务；工作流阶段交给电脑上的 POPPER 窗口
+  document.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { b.disabled = true; try { const r = await api('todos/act', 'POST', { id: b.dataset.act }); if (r.run) { toast('开始了'); location.hash = 'run=' + r.run.id; return; }
+      // 工作流阶段：交给电脑窗口去开，等它回报（最多 40 秒；窗口最多等 20 秒看任务开没开）
+      toast('交给电脑上的 POPPER 窗口了，等它开始…');
+      for (let i = 0; i < 20; i++) {
+        await new Promise(res => setTimeout(res, 2000));
+        const x = await api('todos/act-result', 'GET', { key: r.sent }).catch(() => ({}));
+        if (!x.done) continue;
+        if (x.run) { toast(x.busy ? '这一步正在跑，没有重开：打开的是在跑的那个' : '开始了'); location.hash = 'run=' + x.run.id; return; }
+        toast('电脑上没开起来：这一步可能要先选、先填东西，或者缺 skill（窗口里会弹出来）。窗口里已经打开了这一步，到电脑上看一眼'); return setTimeout(showTodos, 2500);
+      }
+      toast('电脑上的窗口还没回话：过一会儿在「任务」里看看'); setTimeout(showTodos, 2500); } catch (e) { toast(e.message); b.disabled = false; } });
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { location.hash = 'run=' + b.dataset.open; });
+  document.querySelectorAll('[data-done]').forEach(b => b.onclick = async () => { b.classList.add('on'); try { await api('todos/done', 'POST', { id: b.dataset.done, done: true }); toast('打勾了'); setTimeout(showTodos, 300); } catch (e) { toast(e.message); b.classList.remove('on'); } });
+}
+
+// ---------- 跟 AI 说 ----------
+async function showAsk() {
+  S.tab = 'ask'; const me = view;
+  try { if (!S.projects.length) await loadRuns(); } catch (e) { if (me === view) $('#main').innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  if (me !== view) return;
+  frame('跟 AI 说');
+  const ps = S.projects.filter(p => p.exists !== false), last = (() => { try { return localStorage.getItem('popper-proj'); } catch { return null; } })();
+  $('#main').innerHTML = `<div class="sec">在哪个项目里做</div><select id="aproj">${ps.map(p => `<option value="${esc(p.id)}" ${p.id === last ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+    <div class="sec">要 AI 做什么</div><textarea id="atext" placeholder="比如：把收件箱里今天的会议逐字稿整理成要点"></textarea>
+    <div class="att" id="att"></div>
+    <div class="row" style="margin-top:8px"><label class="btn ghost small" style="display:inline-block">加照片 / 文件<input type="file" id="afile" multiple hidden></label><span class="grow"></span><button class="btn" id="ago">开始</button></div>
+    <p class="sub">在这个项目里单独开一个任务，用这个项目选的 AI。照片存进项目的「附件」文件夹。</p>`;
+  const drawAtt = () => { $('#att').innerHTML = S.attach.map(a => `<span>${esc(a.name)}</span>`).join(''); };
+  drawAtt();
+  $('#afile').onchange = async e => {
+    const proj = $('#aproj').value;
+    for (const f of e.target.files) {
+      if (f.size > 25 * 1024 * 1024) { toast(f.name + ' 超过 25MB'); continue; }
+      const data = await new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = bad; r.readAsDataURL(f); });
+      try { const r = await api('projects/attach', 'POST', { id: proj, name: f.name.replace(/^image\./, '照片-' + Date.now() + '.'), data }); S.attach.push({ name: f.name, path: r.path }); drawAtt(); }
+      catch (err) { toast(err.message); }
+    }
+    e.target.value = '';
+  };
+  $('#ago').onclick = async () => {
+    const text = $('#atext').value.trim(), project = $('#aproj').value;
+    if (!text && !S.attach.length) return toast('先写要做的事');
+    const prompt = (text || '看看这些附件') + (S.attach.length ? `\n\n附件（先打开看这些文件；图片直接看图）：\n${S.attach.map(a => '- ' + a.path).join('\n')}` : '');
+    $('#ago').disabled = true;
+    try { try { localStorage.setItem('popper-proj', project); } catch {}
+      const r = await api('runs', 'POST', { project, prompt, title: (text || '看附件').split('\n')[0].slice(0, 50) }); S.attach = []; toast('开始了'); location.hash = 'run=' + r.id; }
+    catch (e) { toast(e.message); $('#ago').disabled = false; }
+  };
+}
+
+// ---------- 路由 ----------
+let shown = null; // 现在显示的是哪一页（hash + 标签），自动刷新同一页时不算换页
+const hist = []; // 这次打开以来在 POPPER 里走过的页（hash），用来判断浏览器的「上一页」是不是还在 POPPER 里
+function route(refresh) {
+  const key = location.hash + '|' + S.tab;
+  if (!refresh || key !== shown) view++;
+  shown = key;
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith('run=')) return showRun(h.slice(4));
+  if (h.startsWith('file=')) return showFile(location.hash.slice(6));
+  return S.tab === 'todos' ? showTodos() : S.tab === 'ask' ? showAsk() : showRuns();
+}
+window.addEventListener('hashchange', () => {
+  if (hist.length > 1 && hist[hist.length - 2] === location.hash) hist.pop(); else hist.push(location.hash); // 回到上一页 / 进了新的一页
+  route();
+});
+// 返回：上一页还在 POPPER 里就用浏览器的返回（手势返回也一致）；不然（从企业微信的链接、主屏幕图标直接打开的任务页）直接去上一级
+function parent() { const h = location.hash; if (h.startsWith('#file=')) return S.fileFrom ? '#run=' + S.fileFrom : ''; return ''; }
+$('#back').onclick = () => {
+  const up = parent();
+  if (hist.length > 1 && hist[hist.length - 2] === up) return history.back();
+  hist.pop();
+  if (location.hash === up) return route(); // 已经在那一页（hash 没变就不会触发 hashchange）
+  location.hash = up;
+};
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => { S.tab = b.dataset.tab; location.hash === '' ? route() : (location.hash = ''); });
+// 看任务和列表时每 5 秒刷新；正在打字、看文件、在「跟 AI 说」时不刷
+function tick() {
+  if (document.hidden || location.hash.startsWith('#file=') || (!location.hash && S.tab === 'ask')) return;
+  const ta = document.querySelector('.bar textarea'); if (ta && (ta.value || document.activeElement === ta)) return;
+  route(true);
+}
+async function boot() {
+  const me = await fetch('/me', { credentials: 'same-origin' }).then(r => r.json()).catch(() => ({}));
+  if (!me.paired) return showPair();
+  hist.push(location.hash); route(); clearInterval(timer); timer = setInterval(tick, 5000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#nav').hidden) tick(); });
+boot();
+</script>
+</body>
+</html>

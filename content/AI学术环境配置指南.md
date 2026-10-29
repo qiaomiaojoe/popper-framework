@@ -1,0 +1,166 @@
+# AI学术环境配置指南
+
+工作台本身不带 AI，它把任务交给你电脑上的 AI 程序去做：Claude Code、Codex，或者 WorkBuddy（腾讯，国内账号就能用）。至少装好一个 AI 程序就能用；其余几项看你的工作流和工具用不用得到。
+
+「AI学术环境配置」上面一排是 AI 程序，点一个就看它的配置；**启用**了的才出现在右栏的 AI 选择里。每一项旁边都有状态：**已就绪**就不用管；没装的点旁边的按钮——AI 程序点「怎么装」拿一行安装命令；课程 skills、检索 skills 由 POPPER 直接下载装好；scansci-pdf、Zotero 服务、pandoc 给你一段指令，粘贴到这个 AI 程序的客户端里装。
+
+## 1. AI 程序（必需，至少一个）
+
+**国内网络、不想翻墙**：用 **WorkBuddy**（腾讯 CodeBuddy Code 的命令行版）。在配置里点 WorkBuddy 卡片，打开「启用」，再点「怎么装」：Mac 先确认有 Node.js 18 以上（终端里 `node -v`），再运行 `npm install -g @tencent-ai/codebuddy-code`；Windows 在 PowerShell 里运行 `irm https://copilot.tencent.com/cli/install.ps1 | iex`。装好后在终端里输入 `codebuddy` 回车，登录方式选「国内站」，用腾讯账号登录。能用混元、DeepSeek、GLM、Kimi 等模型。
+
+POPPER 用的是这些 AI 的**命令行版**（Claude Code CLI、Codex CLI、CodeBuddy Code）。平时聊天用的 Claude 桌面 App 不算；ChatGPT 桌面版在 Mac 上一般自带 Codex 命令行版，在 Windows 上不会，要单独装。
+
+在配置里「没找到」的那一行点「怎么装」，会给你这台电脑对应的一行命令和复制按钮。命令如下（都是官方安装方式）：
+
+**Mac**：打开「终端」（⌘ + 空格，搜「终端」），粘贴一行、回车：
+
+- Claude Code：`curl -fsSL https://claude.ai/install.sh | bash`
+- Codex（装了 ChatGPT 桌面版通常不用装）：`curl -fsSL https://chatgpt.com/codex/install.sh | sh`
+
+**Windows**：打开 PowerShell（开始菜单搜「PowerShell」），粘贴一行、回车：
+
+- Claude Code：`irm https://claude.ai/install.ps1 | iex`
+- Codex：`powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"`
+
+- 装完关掉窗口、再开一个，登录一次：Claude Code 输入 `claude` 回车，用你的 Claude 账号登录（要 Pro 或 Max 订阅，免费账号用不了）；Codex 输入 `codex` 回车，选「Sign in with ChatGPT」。
+- 回到配置点「重新检测」。装好了还是「没找到」：点「手动选择」，把程序文件指给 POPPER。
+- **模型和 effort**：工作站用的是 AI 程序自己设置里的默认值，配置页上能看到。要换：Claude Code 在终端里输入 `/model`；Codex 改 `~/.codex/config.toml` 里的 `model` 和 `model_reasoning_effort`。
+- 每个项目用哪个 AI，在右栏「任务」旁边的下拉里换。
+
+## 2. 我的 skills 库（可选）
+
+你自己写的 skills（每个是一个文件夹，里面有 `SKILL.md`）放在网上一个地方，在配置里填它的地址，就能一键装进 AI；以后改了 skill，再点一次「更新」。换电脑、给几个 AI 程序都装，也是点一下。
+
+课程的 skills 用 POPPER 装、更新，这里不管。
+
+**放法一：GitHub**（国外网络顺；国内有时慢）
+
+1. 登录 github.com，右上角 + →「New repository」，起个名字（比如 `my-skills`），选 **Public**（公开；私有仓库这里下载不了），点「Create repository」。
+2. 在新仓库页面点「uploading an existing file」，把你的 skill 文件夹（一个或几个）整个拖进去，点「Commit changes」。放在仓库最外层、或者放进一个 `skills/` 文件夹里都行。
+3. 想看到版本号的话，在仓库最外层加一个 `version.json`，内容写 `{"version": "1.0.0"}`；以后每次改完把数字加一。不加也能装，只是显示「已装」。
+4. 回到「AI学术环境配置」，选中一个 AI 程序，在「我的 skills 库」点「设置地址」，填 `你的用户名/my-skills`（或者仓库网址），保存，再点「安装」。
+
+**放法二：阿里云 OSS**（国内下载快；按存储和流量收一点点钱）
+
+1. 把你的 skill 文件夹打成一个 .zip（Mac：选中文件夹右键「压缩」；Windows：右键「发送到 → 压缩文件夹」）。想看到版本号的话，同样在压缩包最外层放一个 `version.json`。
+2. 登录阿里云控制台 → 对象存储 OSS → 创建一个 Bucket（地域选离你近的）。
+3. 把 .zip 上传进去，在文件详情里把读写权限设成「公共读」。如果提示被「阻止公共访问」拦住，先在 Bucket 的权限设置里把它关掉。
+4. 复制这个文件的网址（https 开头、.zip 结尾），回到「我的 skills 库」点「设置地址」粘贴、保存，再点「安装」。
+5. 以后改了 skill：重新打包，用**同一个文件名**再传一次覆盖，回来点「更新」。
+
+装的时候，同名的旧 skill 会先备份到收件箱的 `.工作站/skills备份/`。地址只存在这台电脑上，不会发给别人。
+
+## 3. 文献工具（可选）
+
+| | 干什么用 | 说明 |
+|---|---|---|
+| 数据库检索 skills | 在 Google Scholar、ScienceDirect、Web of Science、知网里检索、下载、推送到 Zotero | 不装也能搜（用 AI 自带的联网搜索）。这些 skill 要通过 Chrome DevTools MCP 操作浏览器；Web of Science、ScienceDirect 要学校机构登录，知网要先登录 |
+| OpenAlex API key | 「综述文章」的检索筛选用 OpenAlex 批量抓文献；没有 key 只能抓第一页 | 免费：在 openalex.org 注册登录 → 打开 openalex.org/settings/api（头像 → Settings → API）复制 key → 配置里 OpenAlex 一行点「填写」粘贴保存。邮箱可留空。key 只存在本机 `~/.config/openalex/`，不写进交给 AI 的指令 |
+| scansci-pdf | 批量下载论文 PDF（多个下载源、支持学校 WebVPN） | 要先有 Python 3.11 或更新版本。点「装到 Claude Code / 装到 Codex」拿到安装指令，粘贴到客户端里装（要装程序、改 MCP 设置，得在客户端里由你同意）。它的「推送到 Zotero」功能需要 Zotero 网页版的 API key，不填只是这一项不能用 |
+
+## 4. Zotero（建议）
+
+文献搜索会把文献入库到 Zotero，文献分析可以从 Zotero 读全文（默认读项目里的本地 PDF）。
+
+1. 打开 Zotero（装最新版，7 及以上才有本地接口），在 Zotero 的设置里勾上「允许此计算机上的其他应用程序与 Zotero 通信」。配置页上「本地 API」变成已开启就对了。
+2. 给 AI 程序配 Zotero 服务（zotero-mcp，本地模式）：
+   - Claude Code：`claude mcp add --scope user zotero -e ZOTERO_LOCAL=true -- <zotero-mcp 程序的路径>`
+   - Codex：在 `~/.codex/config.toml` 里加 `[mcp_servers.zotero]`
+   - 最省事：在「AI学术环境配置 → Zotero 服务」点「装到 Claude Code / 装到 Codex」，会给你一段安装指令；打开对应的客户端（Claude Code：终端里运行 claude；Codex：ChatGPT 桌面版里的 Codex）粘贴进去，它装程序、改设置时会请你同意。装完回配置点「重新检测」。
+3. 用 Codex 时，工作站每次运行会临时放行本机 Zotero 服务的检索和入库工具（删笔记、合并重复条目不放行），不改你的 Codex 设置。
+4. **要入库，Zotero 服务得能写。** 本地模式只能检索、读全文，不能入库、建分类（会报「local-only mode」）。梳理收件箱时勾「PDF 入库」、文献搜索最后的入库，都要先开通：配置页「能入库」一行点「让 Claude Code / Codex 能入库」，拿到指令粘贴到客户端里。要准备的：在 zotero.org/settings/keys 登录，记下页面上的用户 ID（user ID），点「Create new private key」勾上「Allow library access」和「Allow write access」生成 key，发给客户端里的 AI。新条目先写到 zotero.org 再同步回电脑，所以 Zotero 里要登录同一个账号、开着同步；PDF 附件会传到 Zotero 云存储（免费 300MB）。
+5. 梳理收件箱时勾了「PDF 入库」的 PDF：放进项目的，入库到 Zotero 里和项目同名的分类（没有就新建）；留在收件箱的，入库到「收件箱」分类。库里已经有的不重复入库，只加进分类。
+
+## 5. pandoc（可选）
+
+综述初稿、全文初稿会顺手转一份 Word（.docx），用的是 pandoc。没装也不影响 Markdown 产出，只是不出 .docx。点「安装」拿到指令粘贴到 Claude Code / Codex 客户端里装，或自己装：Mac `brew install pandoc`，Windows `winget install --id JohnMacFarlane.Pandoc`，也可以去 pandoc.org 下载安装包。
+
+## 6. Roughdraft（可选）
+
+想在浏览器里批注 md 文件（圈出一段写意见、直接增删改），批完让 AI 按批注改，就装 Roughdraft（免费、开源）。装好后，POPPER 里打开 md 文件，右上角会多一个笔形按钮；在 Roughdraft 里批完点「Approve」（改过字是「I'm done」），POPPER 会自动把原文件备份好，再交给这个项目的 AI 按批注改。
+
+1. 先确认有 Node.js：在终端（Windows 是 PowerShell）里输入 `node -v` 回车，出来版本号就有了。没有的话先装：Mac 有 Homebrew 就运行 `brew install node`，Windows 运行 `winget install OpenJS.NodeJS.LTS`，也可以去 nodejs.org 下载 LTS 版安装包。装完关掉终端再开一个。
+2. 运行 `npm i -g roughdraft`。Mac 上提示没有权限（EACCES）的话，前面加 `sudo` 再运行一次，输入开机密码。
+3. 输入 `roughdraft help` 回车，出来说明就装好了。回到配置点「重新检测」，Roughdraft 一行变成「已安装」。
+
+## 7. MinerU（可选）
+
+想让 AI 读得准 PDF（扫描版、带回归表和公式的定量文章），或者同一篇文献不想每次都重新读 PDF，就装 MinerU（上海 AI 实验室开源的 PDF 转文字工具）。装好后「读文献」里的「MinerU」工具会在你电脑上把 PDF 转成带页码的文字稿，放在 `文献/全文/`（和 PDF 同名的 .md，每页开头标 `<!-- 第 N 页 -->`）；知识模块、单篇深读、拆 Model Paper、写综述都会先读它。论文不上传，也不花 AI 额度。
+
+1. 有没有 uv：终端（Windows 是 PowerShell）里输入 `uv --version` 回车，出来版本号就有了。没有的话：Mac 运行 `curl -LsSf https://astral.sh/uv/install.sh | sh`，Windows 运行 `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`，装完关掉终端再开一个。
+2. 装 MinerU：`uv tool install --python 3.12 "mineru>=4.0,<5"`（下载约 300 MB，装好约 1 GB）。国内很慢的话，在命令最后加 `--default-index https://mirrors.aliyun.com/pypi/simple/`。
+3. 下模型：内存够的电脑（M 芯片 Mac 16 GB 以上，其他电脑 8 GB 以上）运行 `mineru-kit models download --tier standard --source modelscope`（约 2 GB），内存小一些的把 `standard` 换成 `basic`（约 0.8 GB；POPPER 也会按内存自动用 basic 档转）。`--source modelscope` 是从国内的 ModelScope 下，不用翻墙；不加的话它先试 Hugging Face，国内常常连不上。
+4. 回到配置点「重新检测」，MinerU 一行变成「已安装」。
+
+一篇文章转几十秒到几分钟，转的时候电脑会忙一些；不会自动转，要用时自己在「读文献 → MinerU」里点。
+
+## 8. 手机远程（可选，实验版）
+
+不在电脑前也能管 POPPER：在手机（或 iPad、另一台电脑）的浏览器里看任务进度、回复停下来等你的 AI、停掉任务、开新任务（可以拍照当附件）、开始待办、看产出；任务做完、出错、等你回复时，企业微信给你发通知，在企业微信里也能直接回 AI。**这是实验版**，还在试，可能有不稳定的地方，有问题请告诉老师。
+
+先说清楚它怎么工作：AI 还是在你的电脑上跑，手机只是遥控。所以**电脑要开着、联网、POPPER 开着**；打开手机远程后 POPPER 会让 Mac 不自己睡，但**合上盖子照样会睡**（插着电源、接着外接显示器才能合盖用）。Windows 上不会阻止睡眠，要自己在系统设置里把「睡眠」改成「从不」。
+
+### 8.1 让手机连上电脑：装 Tailscale
+
+手机要能找到你的电脑，最省事的是 Tailscale（免费的组网工具，把你自己的几台设备连成一个私人网络）：
+
+1. **电脑**：Mac 在 App Store 搜「Tailscale」安装（搜不到就去 tailscale.com/download 下载）；Windows 去 tailscale.com/download 下载安装。打开后点「Log in」，用 Apple、Google、Microsoft 或 GitHub 账号登录；系统问「允许添加 VPN 配置」点允许。建议在它的设置里勾上开机启动。
+2. **手机 / iPad**：App Store（安卓去应用商店或官网）装 Tailscale，**用和电脑同一个账号登录**，允许添加 VPN 配置，把开关打开。
+3. 建议：浏览器打开 login.tailscale.com，在设备列表里找到电脑，点右边「…」→「Disable key expiry」，不然大约 180 天要重新登录一次。
+
+只在家里用、手机和电脑连同一个 Wi-Fi 的话，可以不装 Tailscale（出门就连不上）。
+
+### 8.2 在 POPPER 里打开、配对手机
+
+1. 「AI学术环境配置」→「手机远程」→「设置」→「打开」。窗口里会列出手机要打开的地址：**Tailscale** 那条（`http://100.…:端口/`）在哪都能用，**局域网**那条只在同一个 Wi-Fi 下能用。Mac 第一次打开可能弹「是否允许接受传入的网络连接」，点允许；Windows 防火墙问的话，点「允许访问」（Windows 上还没实测过）。
+2. 点「配对一部手机」，窗口里出一个 6 位数字（5 分钟内有效）。
+3. 在手机的 **Safari**（安卓用 Chrome）里打开上面的地址，输入这 6 位数字。配好以后在 Safari 里「分享 →添加到主屏幕」，以后点图标直接打开。
+4. iPad、另一台电脑也一样，每台配一次。配过的设备都列在窗口里，哪台丢了或不用了就点「撤销」。
+
+### 8.3 企业微信通知、在企业微信里回 AI
+
+两种做法选一种。**推荐智能机器人**：通知发到你和机器人的单聊里，还能直接回 AI。
+
+**智能机器人（推荐）**
+
+1. 在企业微信里建一个智能机器人，**选「API 模式」、连接方式选「使用长连接」**，可使用范围选仅自己。建好后在机器人详情页能看到 **Bot ID** 和 **Secret**。（入口在不同版本的企业微信里位置不一样，一般在「工作台」或通讯录里的「智能机器人」，找不到就在企业微信里搜「智能机器人」。）
+2. POPPER「手机远程」窗口 →「企业微信 · 智能机器人」，填 Bot ID 和 Secret，点「连接」，等它显示「已连上」。**Secret 相当于密码，只填在 POPPER 里，不要截图发给别人**；不小心发出去了就在机器人详情页重置一个新的，再填一次。
+3. 点「生成绑定码」，在企业微信里打开和这个机器人的单聊，发「绑定 六位数字」。窗口变成「已绑定」以后，机器人只认你，别人发的消息一律不理。
+4. 点「发一条测试」，单聊里收到「POPPER 测试通知」就好了。
+5. 在单聊里能这样用：
+   - 收到「#3 ⏳ 等你回复」后，**直接回一句话**：只有一个任务在等你时就交给它；有几个在等时，写成「3 好的」。
+   - 「任务」：看在等你、在做的任务和编号。
+   - 「停 3」：停掉 #3。
+   - 「帮助」：看这些用法。
+   - 开新任务、看产出、待办，用手机网页（通知里有链接，在企业微信里点右上角「在浏览器打开」，用配过对的 Safari 打开）。
+
+**注意：一个机器人同一时间只能连一个地方**：两台电脑（或 POPPER 和别的程序）填同一个机器人，后连上的会把先连上的顶掉，被顶掉的那边显示原因、不会自己连回去。两边都要用，就再建一个机器人。
+
+**群机器人（备用）**：建一个群（至少要有一位同事），群设置 →「消息推送」（旧版叫「群机器人」）→ 添加 → 复制 Webhook 地址，粘贴到「企业微信 · 群机器人 Webhook」，点「发一条测试」。只能收通知，不能在企业微信里回 AI。配了智能机器人就不走这个。
+
+在窗口最下面「什么时候发」里选：等你回复 / 做完了 / 出错。
+
+### 8.4 国内网络下的限制
+
+- **Tailscale 的服务器在境外**：第一次登录、换设备登录要连它的境外服务器，个别网络下登不上或很慢，换个网络（比如手机热点）再试。
+- **连接速度看运气**：两台设备一般能直接连上，速度还可以；直连不上时（比如有的手机流量、公司或学校网络）会绕道境外的中转服务器，打开页面会慢几秒，偶尔连不稳。在国外用反而更顺。
+- **中国区 App Store 可能搜不到 Tailscale**：VPN 类应用在中国区常被下架。搜不到要用其他地区的 Apple ID 下载，或者改用国内的组网工具（比如蒲公英、ZeroTier；它们给的地址只要是 10.x / 172.16–31.x / 192.168.x，POPPER 也认）。
+- **校园网、公司网**有的会挡这类连接，连不上就换手机热点试。
+- **企业微信**在国内正常；智能机器人要电脑能连上 `openws.work.weixin.qq.com`（一般都能）。电脑断网再联网后会自己重连。
+- 实在连不上：只在家里同一个 Wi-Fi 下用局域网地址，或者用远程桌面软件（向日葵、ToDesk）直接操作电脑。
+
+### 8.5 安全
+
+- 没配对的设备打不开；配对码 5 分钟内有效、只能用一次，输错 5 次作废。
+- 手机上做不了改设置、装 skill、导入工具、删文件这些操作，要回电脑上做。
+- 不用的时候在窗口里点「关掉」；手机丢了先在电脑上「撤销」它。
+
+## 出错了怎么办
+
+任务出错时，右栏会写明是哪一类问题，并给出「重试」「换一个 AI 重做」。常见的：
+
+- **模型太忙 / 额度用完**：过一会儿点「重试」，或换一个 AI。
+- **没登录 / 登录过期**：在终端里重新登录 AI 程序，再点「重试」。
+- **工具调用被拦住**：多半是 Zotero、scansci-pdf 没配好，回到这里看哪一项没就绪。
+- **缺少 skill**：执行前会弹出缺哪些。课程的 skill 用 POPPER 装；你自己的 skill 放进「我的 skills 库」再点「更新」。
+- 同样的错反复出现：点开「原始信息」，把内容发到群里。
