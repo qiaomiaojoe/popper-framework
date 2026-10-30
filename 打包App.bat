@@ -17,7 +17,8 @@ mkdir "%STAGE%\app"
 for %%f in (main.cjs kernel.cjs preload.cjs version.json) do copy "app\%%f" "%STAGE%\app\" >nul
 xcopy content "%STAGE%\content\" /e /i /q >nul
 del /q "%STAGE%\content\工作流-隔离测试*.html" "%STAGE%\content\engine-fake.cjs" 2>nul
-node -e "require('fs').writeFileSync(process.argv[1], JSON.stringify({name:'popper-framework',productName:process.argv[2],version:process.argv[3],main:'app/main.cjs',author:'乔淼PhD'}))" "%STAGE%\package.json" "%NAME%" "%VER%"
+rem App 里的 package.json：名字、署名、用的框架版本照搬（配置页「版本」和「关于」读它），版本号用外壳的
+node -e "const p=require('./package.json');require('fs').writeFileSync(process.argv[1],JSON.stringify({name:p.name,productName:p.productName,version:process.argv[2],main:'app/main.cjs',author:p.author||'',popperFramework:p.popperFramework||''}))" "%STAGE%\package.json" "%VER%"
 
 rem 2. 打包
 call "node_modules\.bin\electron-packager.cmd" "%STAGE%" "%NAME%" --platform=win32 --arch=x64 --electron-version=%EV% --app-version=%VER% --out=打包输出 --overwrite --asar --prune=false --icon=构建素材\图标.ico

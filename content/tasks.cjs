@@ -1,4 +1,5 @@
 'use strict';
+const { APP, CFG } = require('./app-name.cjs');
 // 任务管理（第 4 步）：
 // - 同一个项目最多同时跑几个任务（设置 parallel，默认 3，1–5；内容 1.3.9 乔淼 10-27 定，以前是一个），多了的排队，有一个结束就自动开始下一个；
 //   「等你回复」的不占位（以前占着，一个任务等你，后面的全卡住）。不同项目各算各的。
@@ -210,7 +211,7 @@ function createTasks({ ENGINES, found, projects, runsDir, settings, wrap, onQuot
     if (local && !locals[local.kind]) throw Object.assign(Error('没有这种本机任务'), { status: 400 });
     if (local) engine = 'local';
     const f = found[engine];
-    if (!local && !isOn(engine)) throw Object.assign(Error(`${ENGINES[engine]?.name || engine} 已经在「AI学术环境配置」里停用了`), { status: 409 });
+    if (!local && !isOn(engine)) throw Object.assign(Error(`${ENGINES[engine]?.name || engine} 已经在「${CFG}」里停用了`), { status: 409 });
     if (!local && (!f || !f.bin)) throw Object.assign(Error(`没找到可用的 ${ENGINES[engine]?.name || engine}：${f?.info.missingHint || ''}`), { status: 409 });
     if (!local && f.info.riskNotice && !settings.ack[engine]) throw Object.assign(Error(f.info.riskNotice), { status: 409, riskAck: engine }); // 界面弹确认框，确认后 POST engine/ack 再重做
     if (auto && chain && Array.isArray(chain.engines)) { chain = { ...chain, engines: chain.engines.slice() }; chain.engines[chain.i - 1] = engine; }
@@ -233,7 +234,7 @@ function createTasks({ ENGINES, found, projects, runsDir, settings, wrap, onQuot
     if (!text || !String(text).trim()) throw Object.assign(Error('回复是空的'), { status: 400 });
     if (run.status === 'running' || run.status === 'stopping') throw Object.assign(Error('这个任务还在跑，等它这一轮结束'), { status: 409 });
     if (run.status === 'queued') throw Object.assign(Error('这个任务还在排队'), { status: 409 });
-    if (run.local) throw Object.assign(Error('这是 POPPER 在电脑上自己做的任务，不是 AI，没法回复或追问'), { status: 409 });
+    if (run.local) throw Object.assign(Error(`这是 ${APP} 在电脑上自己做的任务，不是 AI，没法回复或追问`), { status: 409 });
     if (!run.sessionId) throw Object.assign(Error('这个任务没有建立会话，没法接着做，请重新执行'), { status: 409 });
     if (!found[run.engine]?.bin) throw Object.assign(Error(`这个任务是用 ${ENGINES[run.engine]?.name || run.engine} 跑的，现在找不到它，没法接着做`), { status: 409 });
     if (busyRun(run.project)) { run.queuedReply = run.status; run.status = 'queued'; run.pendingPrompt = String(text); save(run); log(run); return run; }

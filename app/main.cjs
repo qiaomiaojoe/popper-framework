@@ -4,7 +4,9 @@ const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
-const { startKernel, VERSION, NAME, DATA_NAME } = require('./kernel.cjs');
+const { startKernel, VERSION, NAME, DATA_NAME, AUTHOR, FRAMEWORK } = require('./kernel.cjs');
+// 「关于」里写开发的人（package.json 的 author），另起一行写是用 POPPER Framework 做的
+const CREDIT = [AUTHOR && '开发：' + AUTHOR, `Built with POPPER framework${FRAMEWORK ? ' ' + FRAMEWORK : ''}`].filter(Boolean).join('\n');
 
 // 固定端口：存在窗口里的数据按地址区分，换端口就看不到了。和浏览器版（17890/17892）、POPPER（1787x）错开
 const PORT = 17891, WF_PORT = 17893;
@@ -65,7 +67,7 @@ function buildMenu() {
     { type: 'separator' },
     { label: '开发者工具', accelerator: MAC ? 'Alt+Command+I' : 'Ctrl+Shift+I', click: () => win?.webContents.toggleDevTools() },
     ...(MAC ? [] : [{ type: 'separator' }, { label: `关于 ${NAME}`, click: () => dialog.showMessageBox(win, {
-      title: `关于 ${NAME}`, message: `${NAME} ${VERSION}`, detail: '开发：乔淼PhD' }) }])] };
+      title: `关于 ${NAME}`, message: `${NAME} ${VERSION}`, detail: CREDIT }) }])] };
   const edit = { label: '编辑', submenu: [
     { role: 'undo', label: '撤销' }, { role: 'redo', label: '重做' }, { type: 'separator' },
     { role: 'cut', label: '剪切' }, { role: 'copy', label: MAC ? '拷贝' : '复制' }, { role: 'paste', label: '粘贴' }, { role: 'selectAll', label: '全选' }] };
@@ -93,7 +95,7 @@ app.on('will-quit', () => svc?.stopAll());
 app.whenReady().then(async () => {
   if (!primary) return;
   inheritLoginPath();
-  app.setAboutPanelOptions({ applicationName: NAME, applicationVersion: VERSION, copyright: '开发：乔淼PhD' });
+  app.setAboutPanelOptions({ applicationName: NAME, applicationVersion: VERSION, copyright: CREDIT });
   try {
     svc = await startKernel({
       port: PORT, wfPort: WF_PORT,

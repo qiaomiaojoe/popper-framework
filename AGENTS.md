@@ -26,6 +26,8 @@
 | `工具-*.json` | 内置工具。`工具-示范三条要点.json` 是格式示范：名字、输入框、指令模板（`{{键}}`） |
 | `工作流-*.html` | 内置工作流：一个独立的 HTML，开头 `<script type="application/json" id="aiws-manifest">` 写名字和标识。也可以在界面上「导入」 |
 
+名字、署名、版本：App 名和开发的人在 `package.json` 的 `productName`、`author`；版本号是外壳 `app/version.json`、内容 `content/content.json`（`package.json` 的 `version` 跟外壳一样）。到手是 `My App`、没有署名、版本都是 0.0.0，用户说改名、署名、发版本时改这几处。配置页「版本」、App 的「关于」、浏览器标签页、左下角「My App 配置」、右栏 AI 的默认名字「My App Agent」、各处提示里说到这个 App 的地方都读它们（界面在 `ui.js` 的 `APP()`，后台在 `content/app-name.cjs`），改完重新启动。`popperFramework` 是用的框架版本（配置页「Built with POPPER framework」那行），不要改。左上角那两行字是 `ui.js` 里的 `BRAND`，另外改。
+
 数据不在这个文件夹里：浏览器版在用户资料文件夹的「POPPER Framework-浏览器版」，独立 App 在「POPPER Framework」；项目默认放「文稿/POPPER Framework」。所以重新解压框架不会丢东西。
 
 ## 改的规矩

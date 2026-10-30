@@ -1,4 +1,5 @@
 'use strict';
+const { APP } = require('./app-name.cjs');
 // 「AI学术环境配置 → 空间占用」（内容 1.1.11 起，乔淼 10-23：学员问磁盘为什么占得快、去哪清理）。
 // 10-23 在乔淼 Mac 上量的：POPPER 自己只有几 MB；大头是 Codex 把每个旧版本都留着（~/.codex/packages/*/releases/，一个约 300 MB），
 // 其次是 Codex、Claude Code 的对话记录。这里只算占用、只清两样：Codex 的旧版本、3 个月以前的 Codex 对话记录；都是移进废纸篓 / 回收站，不直接删。
@@ -98,7 +99,7 @@ function createStorage({ dataDir, projectDirs }) {
                 { id: 'codex-sessions-old', label: '3 个月以前的对话记录', bytes: sessionsOld, count: oldSess.length }], sessions },
       { id: 'claude', name: 'Claude Code 对话记录', where: label(path.join(home, '.claude', 'projects')), bytes: claudeProj, exists: fs.existsSync(path.join(home, '.claude', 'projects')), note: 'Claude Code 默认自己删 30 天以前的' },
       { id: 'mineru', name: 'MinerU（程序和模型）', where: [label(mProg), ...mDirs.map(label)].join('、'), bytes: mModels + mProgSize, exists: mDirs.length > 0 || fs.existsSync(mProg), note: `转 PDF 用的；不用了在${WIN ? ' PowerShell ' : '终端'}里运行 uv tool uninstall mineru，再把 ${WIN ? '%USERPROFILE%\\.mineru' : '~/.mineru'} 移进${WIN ? '回收站' : '废纸篓'}` },
-      { id: 'popper', name: 'POPPER 自己的数据', where: label(dataDir), bytes: popper, exists: true, note: '设置、项目列表、任务记录，不要删' },
+      { id: 'popper', name: APP + ' 自己的数据', where: label(dataDir), bytes: popper, exists: true, note: '设置、项目列表、任务记录，不要删' },
       { id: 'projects', name: `项目文件（${dirs.length} 个项目）`, where: '', bytes: projects, exists: true, note: '论文 PDF、稿子都在这里，按需要自己整理' }
     ] };
   }

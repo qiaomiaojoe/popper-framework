@@ -1,4 +1,5 @@
 'use strict';
+const { APP, CFG } = require('./app-name.cjs');
 // 企业微信智能机器人（内容 1.3.14，方案 设计/企业微信智能机器人-方案.md，乔淼 10-27）：跟着 remote.cjs 一起（1.3.15 起学员也有，实验版）。
 // 长连接（官方文档 developer.work.weixin.qq.com/document/path/101463）：POPPER 往外连 wss://openws.work.weixin.qq.com，
 // 用 Bot ID + Secret 订阅（aibot_subscribe），每 30 秒 ping 一次，断了按 1、2、4…30 秒重连。
@@ -121,7 +122,7 @@ function createWecomBot({ settings, save, log = () => {}, onCommand }) {
     const c = cfg();
     if (!c.owner) {
       const m = text.match(/^绑定\s*(\d{6})$/);
-      if (!m) return respond(f, '还没绑定：在电脑上打开 POPPER →「AI学术环境配置 → 手机远程」，点「生成绑定码」，再发「绑定 六位数字」给我。');
+      if (!m) return respond(f, `还没绑定：在电脑上打开 ${APP} →「${CFG} → 手机远程」，点「生成绑定码」，再发「绑定 六位数字」给我。`);
       if (!bind || Date.now() > bind.until || m[1] !== bind.code) return respond(f, '绑定码不对或者过期了：请在电脑上重新点「生成绑定码」。');
       settings.remote.bot = { ...c, owner: who }; bind = null; save(); log('企业微信机器人：绑定好了');
       return respond(f, '绑定好了。以后任务做完、出错、停下来等你回复时，我会在这里告诉你。\n发「帮助」看能做什么。');
@@ -160,7 +161,7 @@ function createWecomBot({ settings, save, log = () => {}, onCommand }) {
     if (sub === 'clear') { close(); delete settings.remote.bot; bind = null; save(); return; }
     if (sub === 'bind') { if (!cfg().id) throw Error('先填 Bot ID 和 Secret'); bind = { code: String(crypto.randomInt(0, 1e6)).padStart(6, '0'), until: Date.now() + BIND_MS }; return; }
     if (sub === 'unbind') { const c = cfg(); delete c.owner; settings.remote.bot = c; save(); return; }
-    if (sub === 'test') { if (!ready()) throw Error(state !== 'ok' ? '机器人还没连上' : '还没绑定：先在企业微信里发「绑定 …」'); send('**POPPER 测试通知**\n收到这条，说明机器人通知能用了。'); return; }
+    if (sub === 'test') { if (!ready()) throw Error(state !== 'ok' ? '机器人还没连上' : '还没绑定：先在企业微信里发「绑定 …」'); send(`**${APP} 测试通知**\n收到这条，说明机器人通知能用了。`); return; }
     throw Error('没有这个接口');
   }
   if (cfg().id && cfg().secret) open();

@@ -1,4 +1,5 @@
 'use strict';
+const { APP } = require('./app-name.cjs');
 // WorkBuddy 引擎（内容 1.2.1，乔淼 10-24）：调用学员本机装好、用自己的腾讯账号登录的 CodeBuddy Code 命令行版（codebuddy -p）。
 // 腾讯把它叫 CodeBuddy Code，官网和学员熟悉的名字是 WorkBuddy（workbuddy.ai/cli），界面上显示 WorkBuddy。
 // 好处：选「国内站」登录不用翻墙，能用混元、DeepSeek、GLM、Kimi 等国内模型（也有 GPT、Gemini）。
@@ -85,8 +86,8 @@ module.exports = {
   // 「怎么装」：官方装法（workbuddy.ai/docs/cli/installation）。Mac 用 npm（要 Node.js 18 以上）；Windows 有不用 Node.js 的官方安装脚本
   install: {
     note: common.WIN
-      ? 'POPPER 用的是 WorkBuddy 的命令行版（腾讯 CodeBuddy Code）。选「国内站」用腾讯账号登录，不用翻墙。'
-      : 'POPPER 用的是 WorkBuddy 的命令行版（腾讯 CodeBuddy Code）。选「国内站」用腾讯账号登录，不用翻墙。要先有 Node.js 18 以上：在终端里输入 node -v 回车，出版本号就有；没有的话先装（有 Homebrew 就运行 brew install node，或者去 nodejs.org 下载 LTS 版）。',
+      ? APP + ' 用的是 WorkBuddy 的命令行版（腾讯 CodeBuddy Code）。选「国内站」用腾讯账号登录，不用翻墙。'
+      : APP + ' 用的是 WorkBuddy 的命令行版（腾讯 CodeBuddy Code）。选「国内站」用腾讯账号登录，不用翻墙。要先有 Node.js 18 以上：在终端里输入 node -v 回车，出版本号就有；没有的话先装（有 Homebrew 就运行 brew install node，或者去 nodejs.org 下载 LTS 版）。',
     shell: common.WIN ? 'PowerShell' : '终端',
     open: common.WIN ? '点开始菜单，搜「PowerShell」，打开它' : '按 ⌘ + 空格，搜「终端」，打开它',
     cmd: common.WIN ? 'irm https://copilot.tencent.com/cli/install.ps1 | iex' : 'npm install -g @tencent-ai/codebuddy-code',

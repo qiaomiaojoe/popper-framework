@@ -83,6 +83,7 @@ svg.i.sm{width:16px;height:16px}
 .ib:active{background:var(--active)}
 .ib.sm{width:28px;height:28px}
 .ib.sm svg.i{width:16px;height:16px}
+.ib:disabled,.ib:disabled:hover{background:transparent;color:var(--soft);opacity:.35;cursor:not-allowed}
 .chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:var(--r-6);background:var(--hover);font-size:var(--fs-xs);color:var(--text);white-space:nowrap}
 .chip.ok{background:var(--success-bg);color:var(--success-ink)}
 .chip.bad{background:var(--rose-bg);color:var(--rose-ink)}
@@ -641,6 +642,8 @@ body.resizing{cursor:col-resize;user-select:none}
 .tri.gone{opacity:.5}
 .tri .tr1{display:flex;align-items:center;gap:8px;min-width:0}
 .tri .tr1 b{font-weight:600;color:var(--ink);font-size:var(--fs-sm)}
+.tri .tr1 b[data-file]{cursor:pointer}
+.tri .tr1 b[data-file]:hover{text-decoration:underline}
 .tri .tr1 svg.i{width:16px;height:16px;flex:none}
 .tri .tr2{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:var(--fs-xs)}
 .tri .tr2 .lab{color:var(--soft)}
@@ -678,6 +681,12 @@ body.resizing{cursor:col-resize;user-select:none}
 .brand svg{flex:none}
 .brand .wmark{flex:none;overflow:visible}
 .brand .wmark .wsub{fill:var(--faint)}
+/* 配置页「版本」里 POPPER framework 的标识：按钮，点了去 GitHub（10-30） */
+.fwmark{display:inline-flex;align-items:center;gap:8px;flex:none;padding:6px 12px 6px 10px;border:1px solid var(--line);border-radius:var(--r-8);color:var(--ink);text-decoration:none}
+.fwmark:hover{background:var(--hover)}
+.fwmark svg{flex:none}
+.fwmark .wmark{overflow:visible}
+.fwmark .wmark .wsub{fill:var(--faint)}
 
 
 /* 添加工具 ·「用哪个 skill」边打字边搜（10-23） */
@@ -761,6 +770,18 @@ body.resizing{cursor:col-resize;user-select:none}
 .dempty{padding:6px 2px 4px;line-height:1.7}
 .dfiles{display:flex;flex-direction:column}
 .dline{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+/* 梳理计划摊在 Dashboard 收件箱里（10-30）：一个文件一行、细线隔开，不再一张张卡片 */
+.dtris{gap:0;margin-top:2px}
+.dtris .tri{border:none;border-top:1px solid var(--border);border-radius:0;background:none;padding:10px 2px}
+.dtris .tri:first-child{border-top:none}
+.dfoot{margin:6px 0 2px;padding-top:10px;border-top:1px solid var(--border)}
+.triask{flex:1 1 260px;min-width:0;box-shadow:none}
+.triask textarea{padding:5px 38px 5px 10px;min-height:32px;max-height:140px;overflow-y:auto}
+.triask .send{width:24px;height:24px;right:4px;bottom:4px}
+.triask .send:disabled{background:var(--border);cursor:not-allowed}
+.triask textarea:disabled{cursor:not-allowed}
+.dsec .trih{margin:10px 0 0}
+.dsec .trires{margin:10px 0 0}
 .dproj{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:var(--r-8);cursor:pointer}
 .dproj:hover{background:var(--hover)}
 .dproj>svg.i{width:18px;height:18px;color:var(--soft);flex:none}

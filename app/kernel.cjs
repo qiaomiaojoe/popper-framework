@@ -17,9 +17,13 @@ const VERSION = require('./version.json').version;
 const KERNEL_API = 2; // 1.0.0 第一次对外发布时从 1 改成 2：0.1.x 期间约定改过很多次、没有加过号，从这里重新算
 const WIN = process.platform === 'win32';
 const readJSON = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
-// 名字：窗口、菜单、提示用 package.json 的 productName（学员改名只改那一处）。
+// 名字、开发署名：窗口、菜单、提示、配置页的「版本」用 package.json 的 productName、author（学员改名、署名只改那一处）。到手是 My App、没有署名，版本 0.0.0。
 // 数据文件夹、默认项目文件夹固定叫「POPPER Framework」：改名不搬家、不丢项目；也和 POPPER（AI学术工作站）的数据分开，两个可以同时装、同时开
-const NAME = readJSON(path.join(__dirname, '..', 'package.json'), {}).productName || 'POPPER Framework';
+const PKG = readJSON(path.join(__dirname, '..', 'package.json'), {});
+const NAME = PKG.productName || 'My App';
+const AUTHOR = String((PKG.author && typeof PKG.author === 'object' ? PKG.author.name : PKG.author) || '');
+// 从哪一版 POPPER Framework 改出来的（package.json 的 popperFramework）：配置页「Built with POPPER framework」那行用，学员改自己的版本号时不动它
+const FRAMEWORK = String(PKG.popperFramework || '');
 const DATA_NAME = 'POPPER Framework';
 // 主端口可以直接送的界面文件（平铺、不含 .cjs 和 .html：程序代码不外送，工作流页面只从工作流端口送）
 // .mjs 是 PDF.js（0.1.4 起）
@@ -107,7 +111,7 @@ function startKernel(options) {
   const authed = req => (req.headers.cookie || '').split(/;\s*/).includes(COOKIE + '=' + token);
   const busy = () => !!(runtime && runtime.isBusy());
   const boot = () => ({
-    ...(runtime ? runtime.config() : {}), shellVersion: VERSION, contentVersion: contentVersion(), contentError: loadError,
+    ...(runtime ? runtime.config() : {}), shellVersion: VERSION, contentVersion: contentVersion(), contentError: loadError, appName: NAME, author: AUTHOR, framework: FRAMEWORK,
     wf: { port: wfPort, token: wfToken }, fileToken
   });
   const page = (res, code, text) => { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(`<meta charset="utf-8"><p style="font:16px sans-serif;padding:40px">${text}</p>`); };
@@ -209,7 +213,7 @@ function startKernel(options) {
     hooks
   }));
 }
-module.exports = { startKernel, VERSION, KERNEL_API, NAME, DATA_NAME };
+module.exports = { startKernel, VERSION, KERNEL_API, NAME, DATA_NAME, AUTHOR, FRAMEWORK };
 
 // 浏览器版（双击「启动.command」/「启动.bat」）走这里：服务开在本机，用默认浏览器打开。
 // 端口 17890（工作流 17892）；数据在用户资料文件夹的「POPPER Framework-浏览器版」，和独立 App 的数据分开；

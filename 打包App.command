@@ -19,6 +19,7 @@ fi
 export ELECTRON_MIRROR="${ELECTRON_MIRROR:-https://npmmirror.com/mirrors/electron/}"
 NAME="$(node -p "require('./package.json').productName")"
 VERSION="$(node -p "require('./app/version.json').version")"
+AUTHOR="$(node -p "require('./package.json').author||''")"
 ELECTRON_VERSION="$(node -p "require('$TOOLS/electron/package.json').version")"
 ARCH="$(uname -m)"; [ "$ARCH" = x86_64 ] && ARCH=x64   # Apple 芯片是 arm64，Intel 是 x64
 
@@ -30,9 +31,8 @@ for f in content/*; do
   if grep -q '"类型":"测试"' "$f" 2>/dev/null || [ "$(basename "$f")" = engine-fake.cjs ]; then continue; fi
   cp "$f" "$STAGE/content/"
 done
-cat > "$STAGE/package.json" <<JSON
-{ "name": "popper-framework", "productName": "$NAME", "version": "$VERSION", "main": "app/main.cjs", "author": "乔淼PhD" }
-JSON
+# App 里的 package.json：名字、署名、用的框架版本照搬（配置页「版本」和「关于」读它），版本号用外壳的
+node -e "const p=require('./package.json');require('fs').writeFileSync(process.argv[1],JSON.stringify({name:p.name,productName:p.productName,version:process.argv[2],main:'app/main.cjs',author:p.author||'',popperFramework:p.popperFramework||''}))" "$STAGE/package.json" "$VERSION"
 # App 要读写「文稿」里的项目文件夹，macOS 会弹窗问一次，这里写弹窗上的说明
 cat > "$STAGE/Info-extra.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -47,7 +47,7 @@ PLIST
 
 # 2. 打成 .app
 "$TOOLS/.bin/electron-packager" "$STAGE" "$NAME" --platform=darwin --arch="$ARCH" --electron-version="$ELECTRON_VERSION" \
-  --app-version="$VERSION" --app-copyright="© 2026 乔淼PhD" --out="$OUT" --overwrite --asar --prune=false ${ZIP_DIR:+--electron-zip-dir="$ZIP_DIR"} \
+  --app-version="$VERSION" ${AUTHOR:+--app-copyright="© $(date +%Y) $AUTHOR"} --out="$OUT" --overwrite --asar --prune=false ${ZIP_DIR:+--electron-zip-dir="$ZIP_DIR"} \
   --icon="$SRC/构建素材/图标.icns" --app-bundle-id=local.popper-framework.app \
   --extend-info="$STAGE/Info-extra.plist" --ignore='Info-extra\.plist'
 APP="$OUT/$NAME-darwin-$ARCH/$NAME.app"

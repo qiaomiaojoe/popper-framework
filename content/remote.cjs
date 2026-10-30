@@ -1,4 +1,5 @@
 'use strict';
+const { APP } = require('./app-name.cjs');
 // 手机远程（内容 1.3.13，方案 设计/手机远程控制-方案.md，乔淼 10-27）：1.3.15 起学员也有（配置页标「实验版」，默认关着；配置方法在 AI学术环境配置指南.md 第 8 节）。
 // - 打开后 POPPER 在第二个端口（主端口 + 10）上给手机一个网页（手机.html）。只接 Tailscale（100.64.0.0/10）、局域网和本机来的请求，别处一律拒绝。
 // - 配对：电脑上点「配对一部手机」出 6 位数字（5 分钟有效、用一次），手机打开网页输进去，拿到这部手机自己的凭证（cookie，存一年）。
@@ -87,7 +88,7 @@ function createRemote({ dataDir, contentDir, mainPort, settings, save, handle, p
       const url = new URL(req.url, 'http://x'), p = decodeURIComponent(url.pathname);
       if (p === '/' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff' });
-        return res.end(fs.readFileSync(path.join(contentDir, '手机.html')));
+        return res.end(fs.readFileSync(path.join(contentDir, '手机.html'), 'utf8').replaceAll('My App', APP)); // 页面里写的「My App」换成这个 App 的名字
       }
       if (p === '/pair' && req.method === 'POST') {
         if (req.headers['x-popper'] !== '1') return send(res, 403, { error: '只允许手机网页操作' });
@@ -229,7 +230,7 @@ function createRemote({ dataDir, contentDir, mainPort, settings, save, handle, p
     if (sub === 'wecom-test') {
       if (!wecomBase()) throw Error('先填企业微信群机器人的地址');
       const l = settings.remote.on ? link('') : '';
-      await sendWecom(`**POPPER 测试通知**\n收到这条，说明通知能用了。${l ? `\n[在手机上打开 POPPER](${l})` : ''}`);
+      await sendWecom(`**${APP} 测试通知**\n收到这条，说明通知能用了。${l ? `\n[在手机上打开 ${APP}](${l})` : ''}`);
       return status();
     }
     throw Error('没有这个接口');

@@ -1,4 +1,5 @@
 'use strict';
+const { APP } = require('./app-name.cjs');
 // Claude Code 引擎：调用学员本机已安装、已用自己账号登录的原版 Claude Code（claude -p）。
 // 不改它、不碰它的登录凭证、不替学员付费——这是 Anthropic 对第三方产品调用 Claude Code 的要求。
 //
@@ -132,7 +133,7 @@ module.exports = {
   missingHint: `没找到 Claude Code 命令行版：点「怎么装」，复制一行命令到${common.WIN ? ' PowerShell ' : '「终端」'}里装好、登录，再点「重新检测」。`,
   // 「怎么装」弹窗用（10-22 乔淼：要写明得先装命令行版）。命令来自 Anthropic 官方安装说明 code.claude.com/docs/en/setup
   install: {
-    note: 'POPPER 用的是 Claude Code 命令行版。Claude 桌面 App（平时聊天的那个）不算，要另外装这个。',
+    note: APP + ' 用的是 Claude Code 命令行版。Claude 桌面 App（平时聊天的那个）不算，要另外装这个。',
     shell: common.WIN ? 'PowerShell' : '终端',
     open: common.WIN ? '点开始菜单，搜「PowerShell」，打开它' : '按 ⌘ + 空格，搜「终端」，打开它',
     cmd: common.WIN ? 'irm https://claude.ai/install.ps1 | iex' : 'curl -fsSL https://claude.ai/install.sh | bash',

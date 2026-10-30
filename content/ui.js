@@ -1,7 +1,7 @@
 'use strict';
 // AI学术工作站 · 界面。
 // 三栏：左边项目（当前项目展开工作流进度）；中间标签页（应用、工作流、工具、文档）；右边任务、文件、直接跟 AI 说。
-// 界面上不放说明文字；版本、AI 程序、我的 skills 库、文献工具、Zotero、pandoc 的检测和安装都在左下角「AI学术环境配置」里。
+// 界面上不放说明文字；版本、AI 程序、我的 skills 库、Roughdraft、MinerU 的检测和安装都在左下角「My App 配置」里（My App 是这个 App 的名字）。
 // 重画时内容没变就不动页面（innerHTML 只在变了时才写），免得窗口刚回到前台时的刷新吞掉一次点击。
 (function () {
   const B = window.__AIWS__ || {};
@@ -43,7 +43,11 @@
   const ui = () => (UI[B.current] = UI[B.current] || { tabs: [{ id: 'store' }], active: 'store' });
   // 名字和 logo：POPPER framework。天鹅和 POPPER 同一只，框架里只画轮廓线（乔淼 10-29 定「线稿天鹅、细线」，App 图标 构建素材/图标.svg 同一套），
   // 原稿 100×100、线宽 2.4，这里缩进 24×24。左上角的字是「POPPER / framework」两行，用 SVG 的 textLength 定成一样宽（见 renderLeft 里的 brand）
-  const BRAND = 'POPPER', LOGO = '<g transform="translate(-2.22 -2.48) scale(.295)"><path d="M10.5 50.2 C15.5 53.5,19.5 55.2,22.5 55 C27 48.2,36.5 45.6,45 46 C53 46.5,59 49,62.4 52.8 C61.4 47,60.9 41.2,61.9 37 C63.2 31.4,67.6 27.6,73.6 27.1 C78.4 26.7,81.6 27.8,83.1 30.6 C84 32.4,84.3 34,84.7 35.6 C85.6 38.2,87.1 41,87.9 43.4 C88.3 44.8,87.4 45.8,86.5 45.1 C85.2 43.6,83.6 40.8,82.2 38.6 C81.3 37.2,79.8 36.4,78.2 36.2 C75.4 35.6,72.6 35.2,70.8 37.6 C68.8 40,68.4 43.4,68.9 47.2 C69.5 51.4,72.1 55.2,72.9 59.2 C73.8 64.4,69.6 69.8,62 70.6 C45 71.6,33 71.3,26 69.9 C19 68.4,14 63.8,11.8 59.6 C11 58.4,9.6 57,8.2 55.6 C10.6 56,12.6 55.8,14.4 55.1 C13.2 53.6,11.8 51.8,10.5 50.2Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></g>';
+  // FW_SWAN 是 POPPER framework 自己的标识，配置页「Built with」那个按钮用，改成自己的 App 也不动它；左上角用的是 BRAND、LOGO，学员改成自己的名字和图标就改这两个
+  const FW_SWAN = '<g transform="translate(-2.22 -2.48) scale(.295)"><path d="M10.5 50.2 C15.5 53.5,19.5 55.2,22.5 55 C27 48.2,36.5 45.6,45 46 C53 46.5,59 49,62.4 52.8 C61.4 47,60.9 41.2,61.9 37 C63.2 31.4,67.6 27.6,73.6 27.1 C78.4 26.7,81.6 27.8,83.1 30.6 C84 32.4,84.3 34,84.7 35.6 C85.6 38.2,87.1 41,87.9 43.4 C88.3 44.8,87.4 45.8,86.5 45.1 C85.2 43.6,83.6 40.8,82.2 38.6 C81.3 37.2,79.8 36.4,78.2 36.2 C75.4 35.6,72.6 35.2,70.8 37.6 C68.8 40,68.4 43.4,68.9 47.2 C69.5 51.4,72.1 55.2,72.9 59.2 C73.8 64.4,69.6 69.8,62 70.6 C45 71.6,33 71.3,26 69.9 C19 68.4,14 63.8,11.8 59.6 C11 58.4,9.6 57,8.2 55.6 C10.6 56,12.6 55.8,14.4 55.1 C13.2 53.6,11.8 51.8,10.5 50.2Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></g>';
+  const BRAND = 'POPPER', LOGO = FW_SWAN;
+  // 这个 App 叫什么（package.json 的 productName，到手是 My App）：左下角「My App 配置」、右栏 AI 默认叫「My App Agent」、提示里说到这个 App，都跟着它（乔淼 10-30）
+  const APP = () => B.appName || 'My App', CFG = () => APP() + ' 配置', AGENT = () => B.agentName || APP() + ' Agent';
   const S = { files: [], fileMode: 'recent', filesOf: null, runs: [], expanded: null, skills: {} };
   window.__wfTests = {}; // 开发用：隔离测试工作流交回来的检查结果
 
@@ -209,6 +213,11 @@
   // ---------- 左栏：项目。Dashboard（下面一级是收件箱）+ 项目；当前项目展开文件 ----------
   const ST = { queued: '排队', running: '执行中', stopping: '停止中', waiting: '等你回复', done: '完成', failed: '出错', stopped: '已停止' };
   const ACTIVE = ['running', 'stopping', 'queued', 'waiting'], LIVE_ST = ACTIVE; // 还没结束的（和 runtime.cjs 的 LIVE 一样）
+  // 「一键梳理」（10-30 乔淼：梳理过了就灰掉）：计划里写了的不算还没梳理；梳理（包括接着说、改计划）没做完也灰掉。返回灰掉的原因，能点就是空的
+  const triLeft = p => p ? (p.inboxUnplanned ?? p.inboxNew ?? 0) : 0;
+  const triBusy = p => !!p && (p.activity || []).some(a => a.title === '梳理收件箱' && ACTIVE.includes(a.status));
+  const triOff = p => triBusy(p) ? '正在梳理，做完了计划就摊在 Dashboard 的收件箱里' : triLeft(p) ? '' : '收件箱里的都梳理过了；放进新文件会再亮起来';
+  const triWand = p => `<button class="ib sm" data-triage ${triOff(p) ? `disabled title="${triOff(p)}"` : `title="一键梳理：${esc(AGENT())} 看一遍，给出每个文件放哪的计划"`}>${I('wand')}</button>`;
   function when(iso) {
     if (!iso) return '';
     const d = new Date(iso); if (isNaN(d)) return '';
@@ -219,7 +228,7 @@
   const bar = (done, total, cls = 'pbar') => `<div class="${cls} ${done === total ? 'full' : ''}">${Array.from({ length: total }, (_, i) => `<i class="${i < done ? 'ok' : i === done ? 'next' : ''}"></i>`).join('')}</div>`;
   function renderLeft() {
     const list0 = B.projects || [];
-    const tri = p => p.inboxNew ? `<span class="ibadge" title="还没梳理的文件">${p.inboxNew}</span><button class="ib sm" data-triage title="一键梳理：Research Agent 看一遍，给出每个文件放哪的计划">${I('wand')}</button>` : '';
+    const tri = p => p.inboxNew ? `<span class="ibadge" title="${triLeft(p) ? '还没梳理的文件' : '梳理好了，在 Dashboard 里看计划、点「照这样做」'}">${p.inboxNew}</span>${triWand(p)}` : '';
     const row = p => {
       const on = p.id === B.current, acts = p.activity || [];
       const live = acts.find(a => a.status === 'waiting') || acts.find(a => ACTIVE.includes(a.status));
@@ -233,28 +242,28 @@
     // Dashboard 置顶；下面「项目 +」和各个项目是一块（乔淼 10-29）
     const plain = list0.filter(p => !p.inbox).map(row).join(''), inbox = list0.filter(p => p.inbox).map(row).join('');
     const cards = inbox + (inbox ? '<div class="pdiv0"></div>' : '') + `<div class="lhead"><span class="grow">项目</span><button class="ib sm" data-act="add" title="新建或打开项目">${I('plus')}</button></div>` + plain;
-    const cp = proj(); document.title = (cp && !cp.inbox ? cp.name + ' · ' : '') + BRAND + ' Framework';
-    put($('#left'), `<div class="brand" title="${BRAND} · 开发：乔淼PhD"><svg viewBox="0 4 24 16" width="39" height="26">${LOGO}</svg><svg class="wmark" viewBox="0 0 96 34" width="96" height="34" role="img" aria-label="${BRAND} framework"><text x="0" y="15" font-size="18" font-weight="700" textLength="95" lengthAdjust="spacing" fill="currentColor">${BRAND}</text><text x="0.5" y="31" font-size="12" textLength="94" lengthAdjust="spacing" class="wsub">framework</text></svg></div>
+    const cp = proj(); document.title = (cp && !cp.inbox ? cp.name + ' · ' : '') + APP(); // 浏览器标签页跟 App 名（package.json 的 productName）
+    put($('#left'), `<div class="brand" title="${esc(APP())}${B.author ? ' · 开发：' + esc(B.author) : ''}"><svg viewBox="0 4 24 16" width="39" height="26">${LOGO}</svg><svg class="wmark" viewBox="0 0 96 34" width="96" height="34" role="img" aria-label="${BRAND} framework"><text x="0" y="15" font-size="18" font-weight="700" textLength="95" lengthAdjust="spacing" fill="currentColor">${BRAND}</text><text x="0.5" y="31" font-size="12" textLength="94" lengthAdjust="spacing" class="wsub">framework</text></svg></div>
       <div class="scroll scroll-y">${cards}</div>
-      <div class="leftfoot">${updHTML()}<button class="btn ghost small" data-act="settings">${I('sliders')}AI学术环境配置</button><div class="motto" title="Karl Popper">All life is problem-solving.</div></div>`);
+      <div class="leftfoot">${updHTML()}<button class="btn ghost small" data-act="settings">${I('sliders')}${esc(CFG())}</button><div class="motto" title="Karl Popper">All life is problem-solving.</div></div>`);
     const lf = $('#l-files'); if (lf && lf.__html === undefined) renderFiles(); // 左栏整块重写过：文件区是新的空壳，补画
   }
   function addMenu(anchor) {
     menu(anchor, [{ label: '新建项目', icon: 'plus', run: newProject },
       { label: '打开文件夹…', icon: 'folderOpen', run: () => act('projects/open', {}).then(r => { if (r) { loadFiles(); loadRuns(); } }) }]);
   }
+  // 新建项目：只填名字和位置（10-30 乔淼：去掉「产出语言」，新项目一律中文：写进项目说明，也随每次的指令交给 AI）
   function newProject() {
     modal('新建项目', `
       <div class="field"><label>名称</label><input type="text" id="npName"></div>
       <div class="field"><label>位置</label><div class="row"><input type="text" id="npDir" value="${esc(B.projectsDir)}"><button class="btn small" id="npPick">选择…</button></div></div>
-      <div class="field inline"><label>产出语言</label><select id="npLang">${(B.langs || ['中文']).map(l => `<option>${esc(l)}</option>`).join('')}</select></div>
       <div class="err" id="npErr"></div>
       <div class="mfoot"><button class="btn" data-close>取消</button><button class="btn primary" id="npOk">新建</button></div>`);
     $('#npName').focus();
     $('#npPick').onclick = async () => { try { const r = await api('projects/pick-dir', 'POST', {}); if (r.dir) $('#npDir').value = r.dir; } catch (e) { toast(e.message); } };
     const ok = async () => {
       try {
-        const r = await api('projects/create', 'POST', { name: $('#npName').value, dir: $('#npDir').value.trim(), lang: $('#npLang').value });
+        const r = await api('projects/create', 'POST', { name: $('#npName').value, dir: $('#npDir').value.trim() });
         close(); Object.assign(B, r); renderAll(); loadFiles(); loadRuns();
       } catch (e) { $('#npErr').textContent = e.message; }
     };
@@ -296,27 +305,23 @@
     if (!m.supported && !m.error) return toast('这个版本不自动更新');
     // 不说更新信息从哪来（国内 / GitHub），学员不需要知道（乔淼 10-24）；出错的原文放在鼠标悬停里
     const msg = m.error ? '没检查成功，可能是网络不通。换个网络（比如开一下梯子）再点一次。'
-      : m.ready ? `新版本 ${m.ready} 已下好：关掉 POPPER 窗口再打开就生效。`
+      : m.ready ? `新版本 ${m.ready} 已下好：关掉 ${APP()} 窗口再打开就生效。`
       : `已经是最新版（内容 ${m.running}）。`;
     modal('检查更新', `<p style="line-height:1.7;margin:0" title="${esc(m.error || '')}">${esc(msg)}</p><div class="mfoot"><span class="grow"></span><button class="btn" data-close>好</button></div>`);
   }
-  // ---------- AI学术环境配置：AI 程序（模型、effort）、我的 skills 库、文献工具、Zotero、pandoc、版本 ----------
-  // 每一项「已就绪 / 没装」；没装的「交给 AI 安装」，在收件箱里跑；顶上「配置指南」看每一项干什么用、怎么装
+  // ---------- 配置（左下角「My App 配置」）：AI 程序（模型、effort）、我的 skills 库、Roughdraft、MinerU、版本 ----------
+  // 每一项「已就绪 / 没装」；没装的点「怎么装」；顶上「配置指南」看每一项干什么用、怎么装。框架不带文献工具（检索 skills、scansci-pdf、Zotero、OpenAlex、pandoc），要用自己加
   async function openSettings() {
     STO = null;
     const yes = (ok, a, b, title) => `<span class="chip ${ok ? 'ok' : 'bad'}" ${title ? `title="${esc(title)}"` : ''}>${ok ? a : b}</span>`;
-    const inst = (what, show) => show ? `<button class="btn small" data-install="${what}" title="交给 AI 安装，在收件箱里跑">安装</button>` : '';
-    // skills 类：缺哪个 AI 程序就给哪个一个按钮，一次只装进一个（乔淼 10-21：分两次装）
-    const instTo = (what, list) => list.map(e => `<button class="btn small" data-install="${what}" data-engine="${esc(e.id)}" title="${['course', 'search'].includes(what) ? `下载后装进 ${esc(e.name)} 的 skills 文件夹` : `在 ${esc(e.name)} 客户端里装：复制指令粘贴进去`}">安装</button>`).join('');
     // 内容 1.2.0（乔淼 10-24）：先选 AI 程序（上面一排卡片），下面只显示这一个的配置；和哪个 AI 都无关的放最下面「大家共用的」
     const ENG = () => (B.engines || []).filter(e => !isFake(e.id));
     if (!S.cfgEng || !ENG().some(e => e.id === S.cfgEng)) S.cfgEng = B.engine;
-    const nSearch = e => ['gs', 'sd', 'wos', 'cnki'].filter(k => e.search[k]).length;
     const wait = '<div class="set-row muted">检查中…</div>';
     const engRow = (e, x) => {
       const meta = e.version ? `<div class="sub2 mono">模型 ${esc((x && x.model) || e.model || (e.defaults || {}).model || '默认')} · effort ${esc((x && x.effort) || (e.defaults || {}).effort || '默认')}</div>` : '';
       // 「手动选择」：自动找不到时自己指给 POPPER（10-21）；手动指过的可以「恢复自动」
-      const pick = `<button class="btn small" data-pickbin="${esc(e.id)}" title="自己找到 ${esc(e.name)} 的程序文件指给 ${BRAND}">手动选择</button>${e.manual ? `<button class="linkish" data-clearbin="${esc(e.id)}">恢复自动</button>` : ''}`;
+      const pick = `<button class="btn small" data-pickbin="${esc(e.id)}" title="自己找到 ${esc(e.name)} 的程序文件指给 ${esc(APP())}">手动选择</button>${e.manual ? `<button class="linkish" data-clearbin="${esc(e.id)}">恢复自动</button>` : ''}`;
       return `<div class="set-row"><span class="grow">程序${meta}<div class="sub2 ellipsis" title="${esc(e.path || '')}">${esc(e.version ? e.where : e.missingHint)}</div></span>${e.version ? `<span class="chip ok">${esc(e.version.replace(/\s*\(.*\)$/, ''))}</span>` : e.checking ? '<span class="chip">检测中…</span>' : '<span class="chip bad">没找到</span>'}${!e.version && !e.checking && e.install ? `<button class="btn small primary" data-howto="${esc(e.id)}">怎么装</button>` : ''}${!e.version || e.manual ? pick : ''}</div>`;
     };
     // 额外放行的服务（内容 1.3.2）：点「选择」才去问这台电脑上的 AI 程序连着哪些服务（要十几秒），问到的记在 S.mcpList
@@ -326,9 +331,12 @@
       const rows = list === 'loading' ? '<div class="set-row muted small">正在问 ' + esc(e.name) + ' 连着哪些服务（十几秒）…</div>'
         : Array.isArray(list) ? (list.length ? list.map(m => `<div class="set-row"><span class="grow">${esc(short(m.name))}${m.name.startsWith('claude.ai ') ? '<div class="sub2">claude.ai 网页上连的</div>' : ''}${m.ok ? '' : '<div class="sub2">现在没连上</div>'}</span><label class="qswitch ${on.has(m.name) ? 'on' : ''}" data-mcpon="${esc(m.name)}"><i></i>${on.has(m.name) ? '已放行' : '没放行'}</label></div>`).join('')
           : '<div class="set-row muted small">没有别的服务</div>') : '';
-      return `<div class="set-sub">额外放行的服务</div><div class="set-row"><span class="grow">让 AI 在 ${BRAND} 里也能用<div class="sub2">${on.size ? '已放行：' + [...on].map(n => esc(short(n))).join('、') : '课程只放行 Zotero、scansci-pdf；要用 Notion 这类服务，在这里勾'}。删除类的操作照样不放行</div></span>${Array.isArray(list) ? '' : `<button class="btn small" data-mcplist="${esc(e.id)}">选择</button>`}</div>${rows}`;
+      return `<div class="set-sub">额外放行的服务</div><div class="set-row"><span class="grow">让 AI 在 ${esc(APP())} 里也能用<div class="sub2">${on.size ? '已放行：' + [...on].map(n => esc(short(n))).join('、') : '默认只放行 Zotero、scansci-pdf（装了的话）；要用 Notion 这类服务，在这里勾'}。删除类的操作照样不放行</div></span>${Array.isArray(list) ? '' : `<button class="btn small" data-mcplist="${esc(e.id)}">选择</button>`}</div>${rows}`;
     };
-    const stateOf = (e, x, L) => !e.enabled ? 'off' : e.checking ? 'wait' : !e.version ? 'missing' : x && x.found && (skillState(x, L) !== 'ok' || !x.zotero) ? 'warn' : 'ok';
+    const stateOf = (e, x, L) => !e.enabled ? 'off' : e.checking ? 'wait' : !e.version ? 'missing' : x && x.found && skillState(x, L) !== 'ok' ? 'warn' : 'ok';
+    // 版本（乔淼 10-30）：上一行是这个 App 自己的——名字、开发的人在 package.json（productName、author），版本号在 app/version.json、content/content.json，学员改成自己的；
+    // 下一行单独写是用 POPPER Framework 做的（package.json 的 popperFramework），右边 POPPER framework 的标识是按钮、点了去 GitHub，改成自己的 App 也留着
+    const FW_URL = 'https://github.com/qiaomiaojoe/popper-framework';
     const STATE = { off: '没启用', wait: '检测中…', missing: '没找到', warn: '有要处理的', ok: '就绪' };
     const draw = (env, u) => {
       const L = (env && env.skillsLatest) || {}, envOf = id => env && env.engines.find(y => y.id === id);
@@ -342,32 +350,24 @@
         if (e.canExtraMcp && e.version) pane += mcpRow(e);
         if (!env) pane += wait;
         else if (x && x.found) pane += `<div class="set-sub">skills</div>${skillLibRow(env, [x])}
-          <div class="set-row"><span class="grow">第三方 skills<div class="sub2">从 GitHub 装的、工具文件里带的：看装了哪些、卸载</div></span><button class="btn small" data-ghmanage>管理</button></div>
-          <div class="set-sub">文献工具</div>
-          <div class="set-row"><span class="grow">数据库检索 skills<div class="sub2">Google Scholar · ScienceDirect · Web of Science · 知网</div></span>${yes(nSearch(x) === 4, '4/4', `${nSearch(x)}/4`)}${instTo('search', nSearch(x) < 4 ? [x] : [])}</div>
-          <div class="set-row"><span class="grow">scansci-pdf<div class="sub2">批量下载论文 PDF</div></span>${yes(x.scansci, '已配置', '未配置')}${instTo('scansci', x.scansci ? [] : [x])}</div>
-          <div class="set-row"><span class="grow">Zotero 服务<div class="sub2">让 AI 能检索、读写你的 Zotero 文献库</div></span>${yes(x.zotero, '已配置', '未配置')}${instTo('zotero', x.zotero ? [] : [x])}</div>${!x.zotero || !('zoteroWrite' in x) ? '' : `
-          <div class="set-row"><span class="grow">能入库<div class="sub2" title="梳理收件箱的「PDF 入库」、文献搜索最后的入库都要用。本地模式只能读，要加 Zotero 网页版的 key">PDF 入库要用；本地模式只能读</div></span>${yes(x.zoteroWrite, '能入库', '只能读')}${x.zoteroWrite ? '' : `<button class="btn small" data-install="zoteroWrite" data-engine="${esc(x.id)}" title="在 ${esc(x.name)} 客户端里改：复制指令粘贴进去">让它能入库</button>`}</div>`}`;
+          <div class="set-row"><span class="grow">第三方 skills<div class="sub2">从 GitHub 装的、工具文件里带的：看装了哪些、卸载</div></span><button class="btn small" data-ghmanage>管理</button></div>`;
       }
-      modal(`AI学术环境配置<button class="btn ghost small guide" data-guide>${I('doc')}配置指南</button>`, `
+      modal(`${esc(CFG())}<button class="btn ghost small guide" data-guide>${I('doc')}配置指南</button>`, `
         <div class="set-sec">AI 程序</div><div class="engcards">${cards}</div><div class="engpane">${pane}</div>
         <div class="set-sec">大家共用的</div>
-        <div class="set-row"><span class="grow">AI 的名字<div class="sub2">右栏顶上那位 AI 叫什么</div></span><input type="text" id="agentName" maxlength="24" value="${esc(B.agentName || 'Research Agent')}" style="width:160px"><button class="btn small" id="agentNameOk">保存</button></div>${!env ? wait : `
-          <div class="set-row"><span class="grow">Zotero</span>${yes(env.zotero.running, '已打开', '没打开')}${env.zotero.running ? '' : '<button class="btn small" data-guide2 title="要装最新版 Zotero 并打开它">怎么设置</button>'}</div>
-          <div class="set-row"><span class="grow">Zotero 本地 API</span>${env.zotero.running ? yes(env.zotero.api, '已开启', '未开启', env.zotero.api ? '' : '在 Zotero 的设置里勾上「允许此计算机上的其他应用程序与 Zotero 通信」') : '<span class="chip">—</span>'}${env.zotero.running && !env.zotero.api ? '<button class="btn small" data-guide2>怎么设置</button>' : ''}</div>
+        <div class="set-row"><span class="grow">AI 的名字<div class="sub2">右栏顶上那位 AI 叫什么</div></span><input type="text" id="agentName" maxlength="24" value="${esc(AGENT())}" style="width:160px"><button class="btn small" id="agentNameOk">保存</button></div>${!env ? wait : `
           <div class="set-row"><span class="grow">同一个项目同时跑几个任务<div class="sub2">多了的排队，有一个结束就接着开；「等你回复」的不占位。同时跑得越多，额度用得越快、电脑越忙，也更容易两个 AI 改到同一个文件</div></span><select id="parN">${[1, 2, 3, 4, 5].map(n => `<option ${n === (B.parallel || 3) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
           <div class="set-row"><span class="grow">AI 还能写的文件夹<div class="sub2">平时 AI 只能写当前项目的文件夹；这里加的文件夹所有 AI 都能写（比如让收件箱的任务把文件放进别的项目）。${(B.writeDirs || []).length ? (B.writeDirs || []).map(d => `<span class="mono">${esc(d.replace(/^\/Users\/[^/]+/, '~'))}</span>`).join('、') : '现在没有'}</div></span><button class="btn small" data-wdirs>${(B.writeDirs || []).length ? '修改' : '添加'}</button></div>
-          <div class="set-row"><span class="grow">OpenAlex<div class="sub2">综述文章的检索筛选用</div></span>${yes(env.openalex.key, '已填 API key', '没填 API key', env.openalex.mailto ? '邮箱 ' + env.openalex.mailto : '')}<button class="btn small" data-oa>${env.openalex.key ? '修改' : '填写'}</button></div>
-          <div class="set-row"><span class="grow">pandoc<div class="sub2">综述、全文初稿转 Word 用</div></span>${yes(!!env.pandoc, '已安装', '没装', env.pandoc)}${inst('pandoc', !env.pandoc)}</div>
           <div class="set-row"><span class="grow">Roughdraft<div class="sub2">md 文件在浏览器里批注，批完自动交给 AI 改</div></span>${yes(!!env.roughdraft.path, '已安装', '没装', env.roughdraft.path)}${env.roughdraft.path ? '' : '<button class="btn small" data-howto-rd>怎么装</button>'}</div>${env.mineru ? `
           ${muRow(env.mineru)}` : ''}`}
 
         <div class="set-sec">手机远程 <span class="chip">实验版</span></div>
-        <div class="set-row"><span class="grow">用手机看任务、回复 AI、开新任务<div class="sub2">手机和电脑装同一个 Tailscale；任务做完、等你回复时发企业微信通知。怎么配见「配置指南」第 8 节</div></span><button class="btn small" data-remote>设置</button></div>
-        <div class="set-sec">空间占用</div><div id="stoBox"><div class="set-row"><span class="grow">看看 POPPER 和 AI 程序在电脑上占了多少地方<div class="sub2">大头一般是 Codex 留着的旧版本；能清的只移进${/^win/.test(B.platform || '') ? '回收站' : '废纸篓'}，不直接删</div></span><button class="btn small" id="stoGo">查看</button></div></div>
+        <div class="set-row"><span class="grow">用手机看任务、回复 AI、开新任务<div class="sub2">手机和电脑装同一个 Tailscale；任务做完、等你回复时发企业微信通知。怎么配见「配置指南」第 5 节</div></span><button class="btn small" data-remote>设置</button></div>
+        <div class="set-sec">空间占用</div><div id="stoBox"><div class="set-row"><span class="grow">看看 ${esc(APP())} 和 AI 程序在电脑上占了多少地方<div class="sub2">大头一般是 Codex 留着的旧版本；能清的只移进${/^win/.test(B.platform || '') ? '回收站' : '废纸篓'}，不直接删</div></span><button class="btn small" id="stoGo">查看</button></div></div>
         <div class="set-sec">版本</div>
-        <div class="set-row"><span class="grow">${BRAND} · 外壳 ${esc(B.shellVersion)} · 内容 ${esc(B.contentVersion)}${B.dev ? ' · 开发模式' : ''}<div class="sub2">开发：乔淼PhD</div></span></div>
-        <div class="mfoot">${B.canQuit ? `<button class="btn ghost" id="quitBtn">${I('power')}退出工作站</button><span class="grow"></span>` : ''}<button class="btn" id="recheck">${I('refresh')}重新检测</button></div>`, true);
+        <div class="set-row"><span class="grow">${esc(APP())} · 外壳 ${esc(B.shellVersion)} · 内容 ${esc(B.contentVersion)}${B.dev ? ' · 开发模式' : ''}${B.author ? `<div class="sub2">开发：${esc(B.author)}</div>` : ''}</span></div>
+        <div class="set-row"><span class="grow">Built with POPPER framework${B.framework ? ' ' + esc(B.framework) : ''}</span><a class="fwmark" href="${FW_URL}" target="_blank" rel="noopener" title="在 GitHub 上看 POPPER framework"><svg viewBox="0 4 24 16" width="30" height="20" aria-hidden="true">${FW_SWAN}</svg><svg class="wmark" viewBox="0 0 96 34" width="74" height="26" role="img" aria-label="POPPER framework"><text x="0" y="15" font-size="18" font-weight="700" textLength="95" lengthAdjust="spacing" fill="currentColor">POPPER</text><text x="0.5" y="31" font-size="12" textLength="94" lengthAdjust="spacing" class="wsub">framework</text></svg></a></div>
+        <div class="mfoot">${B.canQuit ? `<button class="btn ghost" id="quitBtn">${I('power')}退出 ${esc(APP())}</button><span class="grow"></span>` : ''}<button class="btn" id="recheck">${I('refresh')}重新检测</button></div>`, true);
     };
     let env = null, u = '';
     const wire = () => {
@@ -403,9 +403,7 @@
       });
       $('#agentNameOk').onclick = async () => { try { Object.assign(B, await api('agent-name', 'POST', { name: $('#agentName').value })); renderAgent(); toast('改好了'); } catch (err) { toast(err.message); } };
       layer.querySelector('[data-guide]').onclick = openGuide;
-      layer.querySelectorAll('[data-guide2]').forEach(b => b.onclick = openGuide);
-      const oa = layer.querySelector('[data-oa]'); if (oa) oa.onclick = () => openOpenAlex(env.openalex);
-            const wd = layer.querySelector('[data-wdirs]'); if (wd) wd.onclick = openWriteDirs;
+      const wd = layer.querySelector('[data-wdirs]'); if (wd) wd.onclick = openWriteDirs;
       const rm = layer.querySelector('[data-remote]'); if (rm) rm.onclick = () => openRemote();
       const pn = $('#parN'); if (pn) pn.onchange = async () => { try { Object.assign(B, await api('env/parallel', 'POST', { n: +pn.value })); toast(`同一个项目最多同时跑 ${pn.value} 个`); poll(); } catch (err) { toast(err.message); } };
       layer.querySelectorAll('[data-howto]').forEach(b => b.onclick = () => howToInstall(b.dataset.howto));
@@ -419,12 +417,6 @@
       const gm = layer.querySelector('[data-ghmanage]'); if (gm) gm.onclick = openGhManage;
       const sl = layer.querySelector('[data-skilllib]'); if (sl) sl.onclick = () => updateSkillLib(sl, sl.dataset.skilllib.split(','));
       const ss = layer.querySelector('[data-skillsrc]'); if (ss) ss.onclick = () => openSkillsSource(env && env.skillsLatest && env.skillsLatest.source);
-      layer.querySelectorAll('[data-install]').forEach(b => b.onclick = async () => {
-        if (['course', 'search'].includes(b.dataset.install)) return installSkills(b, b.dataset.install, b.dataset.engine);
-        if (['scansci', 'zotero', 'zoteroWrite', 'pandoc'].includes(b.dataset.install)) return installInClient(b.dataset.install, b.dataset.engine);
-        try { const r = await api('env/install', 'POST', { what: b.dataset.install, engine: b.dataset.engine || undefined }); close(); askNotify(); toast(`已交给 ${engineName(r.engine)}，在收件箱里跑`); refreshProjects(); poll(); }
-        catch (err) { toast(err.message); }
-      });
     };
     const load = () => api('env').then(r => { env = r; B.mineru = !!(r.mineru && !r.mineru.problem); if ($('#recheck')) { draw(env, u); wire(); } }).catch(() => {});
     draw(env, u); wire(); load();
@@ -440,10 +432,10 @@
       : `<span class="chip bad" title="${esc(tip || '')}">${MU_PROBLEM[m.problem] || '没装'}</span>`;
     const models = !m.problem && m.models === false ? `<span class="chip amber" title="第一次转时会自己下，那一篇要多等一会儿">模型没下</span><button class="btn small" data-howto-mu="models">下模型</button>` : '';
     const act = m.problem === 'old' ? '<button class="btn small" data-howto-mu="upgrade">怎么升级</button>' : m.problem ? '<button class="btn small" data-howto-mu="install">怎么装</button>' : '';
-    const pick = m.problem && m.problem !== 'old' ? `<button class="btn small" data-mubin="pick" title="自己装在别处（conda、虚拟环境）的，找到里面的 mineru-kit 指给 ${BRAND}">手动选择</button>` : '';
+    const pick = m.problem && m.problem !== 'old' ? `<button class="btn small" data-mubin="pick" title="自己装在别处（conda、虚拟环境）的，找到里面的 mineru-kit 指给 ${esc(APP())}">手动选择</button>` : '';
     return `<div class="set-row"><span class="grow">MinerU<div class="sub2">PDF 转成带页码的文字稿（「读文献 → MinerU」），扫描版、表格也能读；可选${m.problem === 'nopython' ? '。找到了程序，但找不到它用的 Python：点「手动选择」指另一个，或者照「怎么装」重装一份' : ''}</div></span>${chip}${models}${act}${pick}${m.manual ? '<button class="linkish" data-mubin="clear">恢复自动</button>' : ''}</div>`;
   }
-  // 我的 skills 库、数据库检索 skills：自己下载、解压、复制（不经过 AI）；装完弹结果，装不上给「复制安装指令」去客户端手动装
+  // 我的 skills 库：自己下载、解压、复制（不经过 AI）；装完弹结果，装不上给「复制安装指令」去客户端手动装
   // 我的 skills 库：学员自己的 GitHub 仓库或阿里云上的压缩包（地址在这里设置，怎么准备见配置指南第 2 节）。设置了地址、这个 AI 还没装或缺了，才算「要处理」
   const skillState = (e, L) => e.course.missing.length ? 'missing' : L.source && !e.course.installed ? 'none' : 'ok';
   function skillLibRow(env, E) {
@@ -482,7 +474,7 @@
   }
   function renderStorage(r) {
     const box = $('#stoBox'); if (!box) return;
-    const why = { 'codex-old': 'Codex 每次自动更新都把旧版本留着，现在用的那一版和最新的一版不动', 'codex-sessions-old': `移走以后，那些旧任务在 ${BRAND} 里不能再「接着做 / 追问」；已经做出来的文件不受影响` };
+    const why = { 'codex-old': 'Codex 每次自动更新都把旧版本留着，现在用的那一版和最新的一版不动', 'codex-sessions-old': `移走以后，那些旧任务在 ${esc(APP())} 里不能再「接着做 / 追问」；已经做出来的文件不受影响` };
     box.innerHTML = r.items.filter(x => x.exists).map(x => `<div class="set-row"><span class="grow">${esc(x.name)}<div class="sub2 ellipsis" title="${esc(x.where)}">${esc([x.where, x.note].filter(Boolean).join(' · '))}</div></span><span class="chip">${fmtSize(x.bytes)}</span></div>`
       + (x.clean || []).filter(c => c.count).map(c => `<div class="set-row indent"><span class="grow">${esc(c.label)}<div class="sub2">${esc(why[c.id] || '')}</div></span><span class="chip amber">${fmtSize(c.bytes)}</span><button class="btn small" data-stoclean="${esc(c.id)}" data-stolabel="${esc(c.label)}" data-stosize="${fmtSize(c.bytes)}">移进${esc(r.trashName)}</button></div>`).join('')).join('')
       + `<div class="set-row"><span class="grow small muted">想从${esc(r.trashName)}里彻底删掉，自己去清空${esc(r.trashName)}；后悔了也能从那里拿回来。</span><button class="btn small ghost" id="stoGo">重新算</button></div>`;
@@ -512,33 +504,6 @@
     $('#isBack').onclick = openSettings;
     const c = $('#isCopy'); if (c) c.onclick = () => copyInstall('course', (rs.find(r => r.errors.length) || {}).engine);
   }
-  async function installSkills(btn, what, engine) {
-    btn.disabled = true; btn.textContent = '正在安装…';
-    let r;
-    try { r = await api('env/install-skills', 'POST', { what, engine }); } catch (err) { r = { engine, installed: [], backedUp: [], errors: [err.message] }; }
-    if (r.config) Object.assign(B, r.config);
-    const name = engineName(engine), bad = (r.errors || []).length;
-    modal(bad ? (r.installed.length ? '装了一部分' : '没装上') : '装好了', `
-      <div class="set-row"><span class="grow">装进 ${esc(name)}<div class="sub2 ellipsis" title="${esc(r.target || '')}">${esc(r.target || '')}</div></span><span class="chip ${r.installed.length ? 'ok' : 'bad'}">${r.installed.length} 个</span></div>
-      ${r.backedUp.length ? `<div class="set-row"><span class="grow">同名的旧版先备份了<div class="sub2 ellipsis" title="${esc(r.backupDir || '')}">${esc(r.backupDir || '')}</div></span><span class="chip">${r.backedUp.length} 个</span></div>` : ''}
-      ${bad ? `<div class="set-row"><span class="grow">没装上的<div class="sub2">${r.errors.map(esc).join('<br>')}</div></span></div>
-        <div class="set-row"><span class="grow small muted">可以复制安装指令，打开 ${esc(name)} 客户端粘贴进去手动装</span><button class="btn small" id="isCopy">复制安装指令</button></div>` : ''}
-      <div class="mfoot"><button class="btn" id="isBack">回到配置</button></div>`);
-    $('#isBack').onclick = openSettings;
-    const c = $('#isCopy'); if (c) c.onclick = () => copyInstall(what, engine);
-  }
-  // scansci-pdf、Zotero 服务、pandoc：要装程序、改 AI 程序的设置，POPPER 里的 AI 没有这个权限，给指令到客户端里装（10-21）
-  async function installInClient(what, engine) {
-    let t; try { t = await api('env/install-text', 'GET', { what, engine }); } catch (err) { return toast(err.message); }
-    const who = engine ? engineName(engine) : 'AI 程序', isMac = navigator.platform.startsWith('Mac');
-    modal('在客户端里安装', `
-      <p style="line-height:1.7">这一项要装程序、改 AI 程序的设置，需要你在 ${esc(who)} 客户端里点同意。${esc(((B.engines || []).find(x => x.id === engine) || {}).client || '打开它的客户端')}，把下面的指令粘贴进去；装完回到这里点「重新检测」。</p>
-      <textarea id="instText" readonly rows="11" style="width:100%;font:12.5px/1.6 var(--font-mono)">${esc(t.text)}</textarea>
-      <div class="mfoot"><button class="btn" id="icBack">回到配置</button><span class="grow"></span><button class="btn primary" id="icCopy">复制指令</button></div>`, true);
-    const ta = $('#instText'); ta.focus(); ta.select();
-    $('#icBack').onclick = openSettings;
-    $('#icCopy').onclick = async () => { if (await copyText(t.text)) toast('已复制，粘贴到客户端里'); else { ta.focus(); ta.select(); toast(`按 ${isMac ? '⌘C' : 'Ctrl+C'} 复制`); } };
-  }
   async function copyInstall(what, engine) {
     try {
       const t = await api('env/install-text', 'GET', { what, engine });
@@ -563,14 +528,13 @@
         <li>${esc(x.login)}</li>
         <li>回到这里点「重新检测」。</li>
       </ol>
-      ${tool ? '' : `<p class="small muted" style="margin:12px 0 0">装好了还是「没找到」：点「手动选择」，找到 ${esc(e.name)} 的程序文件指给 ${BRAND}。</p>`}
+      ${tool ? '' : `<p class="small muted" style="margin:12px 0 0">装好了还是「没找到」：点「手动选择」，找到 ${esc(e.name)} 的程序文件指给 ${esc(APP())}。</p>`}
       <div class="mfoot"><button class="btn" id="howBack">回到配置</button><span class="grow"></span>${x.steps ? '' : '<button class="btn primary" id="howCopy">复制命令</button>'}</div>`, true);
     $('#howBack').onclick = openSettings;
     const copy = async (cmd, ta) => { if (await copyText(cmd)) toast(`已复制，粘贴到${x.shell}里`); else { ta.focus(); ta.select(); toast(`按 ${isMac ? '⌘C' : 'Ctrl+C'} 复制`); } };
     if (x.steps) layer.querySelectorAll('[data-howcopy]').forEach(b => b.onclick = () => copy(x.steps[+b.dataset.howcopy].cmd, layer.querySelector(`[data-howcmd="${b.dataset.howcopy}"]`)));
     else $('#howCopy').onclick = () => copy(x.cmd, $('#howCmd'));
   }
-  // OpenAlex API key：存在本机 ~/.config/openalex/，检索脚本从那里读；空着的不改
   // AI 还能写的文件夹（内容 1.3.2）：一行一个完整路径，清空就是只能写当前项目
   function openWriteDirs() {
     modal('AI 还能写的文件夹', `
@@ -590,8 +554,8 @@
     const n = st.wecom.notify, bt = st.bot || {}, when = iso => { const d = new Date(iso); return `${d.getMonth() + 1}-${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
     const left = st.pair ? Math.max(0, Math.round((st.pair.until - Date.now()) / 60000)) : 0;
     modal('手机远程 <span class="chip">实验版</span>', `
-      <div class="set-row small muted" style="display:block">实验版：还在试，可能有不稳定的地方。先在「配置指南」第 8 节看清楚怎么配、国内网络下有哪些限制。<button class="btn ghost small" id="rmGuide">${I('doc')}看配置指南</button></div>
-      <div class="set-row"><span class="grow">打开手机远程<div class="sub2">打开后手机能连上这台电脑上的 POPPER；电脑开着、POPPER 开着才能用，打开期间电脑不会自己睡（合上盖子照样会睡）</div></span><button class="btn small ${st.on ? '' : 'primary'}" id="rmOn">${st.on ? '关掉' : '打开'}</button></div>
+      <div class="set-row small muted" style="display:block">实验版：还在试，可能有不稳定的地方。先在「配置指南」第 5 节看清楚怎么配、国内网络下有哪些限制。<button class="btn ghost small" id="rmGuide">${I('doc')}看配置指南</button></div>
+      <div class="set-row"><span class="grow">打开手机远程<div class="sub2">打开后手机能连上这台电脑上的 ${esc(APP())}；电脑开着、${esc(APP())} 开着才能用，打开期间电脑不会自己睡（合上盖子照样会睡）</div></span><button class="btn small ${st.on ? '' : 'primary'}" id="rmOn">${st.on ? '关掉' : '打开'}</button></div>
       ${st.on ? `${st.error ? `<div class="errbox">${esc(st.error)}</div>` : ''}
       <div class="set-sub">手机上打开</div>
       ${st.urls.length ? st.urls.map(u => `<div class="set-row"><span class="grow"><span class="mono">${esc(u.url)}</span><div class="sub2">${u.kind === 'Tailscale' ? 'Tailscale：手机在哪都能连（手机上也要开着 Tailscale）' : '局域网：手机和电脑连同一个 Wi-Fi 时能用'}</div></span><button class="btn small" data-copy="${esc(u.url)}">复制</button></div>`).join('')
@@ -641,32 +605,13 @@
     // 配对码 / 绑定码倒计时、手机配上了、机器人连上了、你在企业微信里发了绑定：过一会儿自己刷新
     if (st.pair || (bt.set && !S.botEdit && (bt.state === 'connecting' || (bt.bind && !bt.bound)))) setTimeout(() => { if ($('#rmBack') && !S.botEdit) openRemote(); }, bt.bind || bt.state === 'connecting' ? 3000 : 30000);
   }
-  function openOpenAlex(cur) {
-    modal('OpenAlex API key', `
-      <p style="line-height:1.7;margin:0 0 8px">OpenAlex 是免费的学术文献数据库。「综述文章」的检索筛选用它批量抓文献，没有 key 只能抓第一页。key 免费，拿一次大约一分钟：</p>
-      <ol style="line-height:1.8;padding-left:20px;margin:0 0 12px">
-        <li>打开 <a href="https://openalex.org" target="_blank" rel="noopener">openalex.org</a>，右上角注册一个账号（邮箱即可）并登录。</li>
-        <li>打开 <a href="https://openalex.org/settings/api" target="_blank" rel="noopener">openalex.org/settings/api</a>（也可以点右上角头像 → Settings → API），复制页面上的 API key。</li>
-        <li>粘贴到下面，点「保存」。</li>
-      </ol>
-      <div class="field"><label>API key</label><input type="password" id="oaKey" autocomplete="off" placeholder="${cur && cur.key ? '已填；要换就粘贴新的' : '粘贴从 openalex.org 复制的 key'}"></div>
-      <div class="field"><label>邮箱（可留空）</label><input type="text" id="oaMail" value="${esc((cur && cur.mailto) || '')}" placeholder="写你的邮箱，OpenAlex 出问题时能联系到你"></div>
-      <p class="small muted" style="margin:4px 0 0">只存在这台电脑上（~/.config/openalex/），检索脚本自己去读，不写进交给 AI 的指令。</p>
-      <div class="mfoot"><button class="btn" id="oaBack">返回</button><button class="btn primary" id="oaSave">保存</button></div>`);
-    $('#oaBack').onclick = openSettings;
-    $('#oaSave').onclick = async () => {
-      try { await api('env/openalex', 'POST', { key: $('#oaKey').value, mailto: $('#oaMail').value }); toast('已保存'); openSettings(); }
-      catch (e) { toast(e.message); }
-    };
-    $('#oaKey').focus();
-  }
   async function openGuide() {
     try { const r = await api('env/guide'); modal('配置指南', `<div class="md guidebox">${md(r.text).replace(/^<h1>.*?<\/h1>/, '')}</div><div class="mfoot"><button class="btn" id="guideBack">返回</button></div>`, true); $('#guideBack').onclick = openSettings; }
     catch (e) { toast(e.message); }
   }
   function quit() {
     const busy = (S.allRuns || []).some(r => ['running', 'stopping', 'queued', 'waiting'].includes(r.status));
-    const go = async () => { try { await api('quit', 'POST', {}); } catch {} document.body.innerHTML = '<div class="empty" style="padding-top:30vh">工作站已退出，可以关掉这个窗口。</div>'; };
+    const go = async () => { try { await api('quit', 'POST', {}); } catch {} document.body.innerHTML = `<div class="empty" style="padding-top:30vh">${esc(APP())} 已退出，可以关掉这个窗口。</div>`; };
     if (busy) confirmBox('还有任务没结束', '<p class="muted small" style="margin:10px 0 0">退出会停掉正在跑的任务。</p>', '仍然退出', go, true); else go();
   }
 
@@ -779,7 +724,7 @@
       return `<div class="card wf" data-openwf="${esc(w.id)}" title="${esc(w.one || '')}">${wfTile(w, 'lg')}<div class="grow"><div class="top"><b>${esc(w.name)}</b>${where}</div>${meta}</div></div>`;
     }).join('');
     return `<div class="page">
-      ${p && !p.inbox && openingLine(p) ? `<div class="opening">${MARK('idle', 'sm')}<span><b>${esc(B.agentName || 'Research Agent')}</b>：${esc(openingLine(p))}</span></div>` : ''}
+      ${p && !p.inbox && openingLine(p) ? `<div class="opening">${MARK('idle', 'sm')}<span><b>${esc(AGENT())}</b>：${esc(openingLine(p))}</span></div>` : ''}
       <div class="sec">工作流</div>
       <div class="grid">${cards}<div class="card import" data-act="import">${I('upload')}<span>导入</span></div>${(B.tools || []).some(t => t.id === 'wfbuild') ? `<div class="card import" data-opentool="wfbuild" title="把你自己的做事顺序造成一条工作流">${I('wf-build')}<span>造工作流</span></div>` : ''}</div>
       <div class="sec">工具</div>${toolCards()}</div>`;
@@ -789,12 +734,16 @@
   const onDash = () => { const p = proj(), t = curTab(); return !!(p && p.inbox && t && t.id === 'store'); };
   const inboxOnlyHTML = () => `<div class="page"><div class="art">${art('projects')}</div><p class="muted" style="text-align:center;line-height:1.8">收件箱只用来梳理文件。要用工具、跑工作流，在左栏选一个项目，或者点「项目」右边的 + 新建一个。</p></div>`;
   function dashHTML() {
-    const ib = inboxProj(), d = S.plan, pl = d && d.plan, files = (S.files || []).filter(f => f.kind !== 'dir' && !f.path.includes('/') && !f.path.startsWith('.'));
-    // 收件箱：还没梳理的文件、梳理按钮；上次梳理的计划和结果
-    const plan = !pl || !pl.items.length ? '' : pl.applied ? `<div class="dline"><span class="grow small muted">上次梳理的计划已经照着做了${pl.at ? '（' + esc(when(pl.at)) + '）' : ''}。</span><button class="btn small ghost" data-dash-plan>看那份计划</button>${d.canUndo ? '<button class="btn small ghost" data-tri-undo>撤销上次梳理</button>' : ''}</div>`
-      : `<div class="dline"><span class="grow small">梳理计划好了：${pl.items.filter(x => x.exists).length} 个文件，每个都写了放哪、为什么。</span><button class="btn small primary" data-dash-plan>查看并照这样做</button></div>`;
-    const inbox = `<div class="dsec"><div class="dhead">${I('inbox')}<b>收件箱</b><span class="n">${ib && ib.inboxNew ? ib.inboxNew + ' 个还没梳理' : '没有要梳理的文件'}</span><span class="grow"></span>${ib && ib.inboxNew ? `<button class="btn small primary" data-triage>${I('wand')}一键梳理</button>` : ''}</div>
-      ${files.length ? `<div class="dfiles">${files.slice(0, 8).map(f => `<div class="frow" data-file="${esc(f.path)}" title="${esc(f.path)}">${fileIcon(f.kind)}<span class="grow"><span class="nm">${esc(f.path)}</span>${f.mtime ? `<span class="meta">${esc(when(new Date(f.mtime).toISOString()))}</span>` : ''}</span></div>`).join('')}${files.length > 8 ? `<div class="small muted" style="padding:4px 8px">还有 ${files.length - 8} 个</div>` : ''}</div>` : `<div class="small muted dempty">把零散文件拖到左栏的「收件箱」上，就放进来；再点「一键梳理」，AI 给出每个文件放哪。</div>`}
+    const ib = inboxProj(), d = S.plan, pl = d && d.plan, all = (S.files || []).filter(f => f.kind !== 'dir' && !f.path.includes('/') && !f.path.startsWith('.'));
+    // 收件箱：还没梳理的文件、梳理按钮；梳理计划就摊在这里，改去哪、点「照这样做」都在原地（10-30 乔淼：不另开标签页）
+    const undo = d && d.canUndo ? '<button class="btn small ghost" data-tri-undo>撤销上次梳理</button>' : '', off = triOff(ib), busy = triBusy(ib);
+    const plan = !pl || !pl.items.length ? '' : pl.applied ? `<div class="dline" id="dash-plan"><span class="grow small muted">上次梳理的计划已经照着做了${pl.at ? '（' + esc(when(pl.at)) + '）' : ''}。</span><button class="btn small ghost" data-dash-plan>${S.dashPlanOpen ? '收起' : '看那份计划'}</button>${undo}</div>${S.dashPlanOpen ? `<div class="tris dtris">${planRows(d, pl)}</div>` : ''}`
+      : `<div class="dline" id="dash-plan"><span class="grow small">梳理计划好了：${pl.items.filter(x => x.exists).length} 个文件，每个都写了放哪、为什么。不合适的直接在下面改，满意就点「照这样做」。</span></div>
+        <div class="tris dtris">${planRows(d, pl)}</div><div class="trifoot dfoot"><button class="btn small primary" data-tri-apply ${busy ? `disabled title="等 ${esc(AGENT())} 改完计划"` : ''}>照这样做</button>${undo}${triAskHTML(busy)}</div>${todoHTML(pl, true)}`;
+    // 计划里已经有的文件不在上面再列一遍
+    const inPlan = new Set(pl && !pl.applied ? pl.items.filter(x => x.exists).map(x => x.file) : []), files = all.filter(f => !inPlan.has(f.path));
+    const inbox = `<div class="dsec"><div class="dhead">${I('inbox')}<b>收件箱</b><span class="n">${busy ? '正在梳理…' : triLeft(ib) ? triLeft(ib) + ' 个还没梳理' : ib && ib.inboxNew ? '梳理好了，等你确认' : '没有要梳理的文件'}</span><span class="grow"></span><button class="btn small primary" data-triage ${off ? `disabled title="${off}"` : ''}>${I('wand')}一键梳理</button></div>
+      ${files.length ? `<div class="dfiles">${files.slice(0, 8).map(f => `<div class="frow" data-file="${esc(f.path)}" title="${esc(f.path)}">${fileIcon(f.kind)}<span class="grow"><span class="nm">${esc(f.path)}</span>${f.mtime ? `<span class="meta">${esc(when(new Date(f.mtime).toISOString()))}</span>` : ''}</span></div>`).join('')}${files.length > 8 ? `<div class="small muted" style="padding:4px 8px">还有 ${files.length - 8} 个</div>` : ''}</div>` : all.length ? '' : `<div class="small muted dempty">把零散文件拖到左栏的「收件箱」上，就放进来；再点「一键梳理」，AI 给出每个文件放哪。</div>`}
       ${plan}${S.triResult ? `<div class="trires">${S.triResult}</div>` : ''}${!pl && d && d.canUndo ? '<div class="dline"><span class="grow"></span><button class="btn small ghost" data-tri-undo>撤销上次梳理</button></div>' : ''}</div>`;
     // 各项目近况：上次做到哪、下一步（项目首页开场那句话）；有任务在跑、在等你的标出来
     const ps = (B.projects || []).filter(p => !p.inbox && p.exists).map(p => {
@@ -855,9 +804,9 @@
     if (!ml || ml.loading) return `<div class="page toolpage">${head}<div class="muted">正在看项目里有哪些 PDF…</div></div>`;
     if (ml.err) return `<div class="page toolpage">${head}<div class="bad">${esc(ml.err)}</div></div>`;
     const d = ml.data, sel = new Set(t.msel || []), busy = muBusy();
-    if (!d.installed) return `<div class="page toolpage">${head}<div class="errhelp">${d.problem === 'old' ? `<b>电脑上的 MinerU 是 ${esc(d.version)}，太旧了</b><div>要 4.0 以上。升级办法在「AI学术环境配置 → 大家共用的 → MinerU」，升级完回来点「刷新」。</div>`
-      : d.problem === 'nopython' ? `<b>找到了 MinerU，但用不了</b><div>找不到它用的 Python。到「AI学术环境配置 → 大家共用的 → MinerU」点「手动选择」指另一个，或者照「怎么装」重装一份。</div>`
-      : `<b>这台电脑上没找到 MinerU</b><div>没装的话，装法在「AI学术环境配置 → 大家共用的 → MinerU」：照着复制几行命令，装好回来点「刷新」。已经装在 conda 或自己的虚拟环境里的，到那里点「手动选择」，找到环境里的 mineru-kit。不装也不影响别的工具。</div>`}</div><div class="tacts"><button class="btn small primary" data-mhow>${d.problem === 'old' ? '怎么升级' : '怎么装'}</button></div></div>`;
+    if (!d.installed) return `<div class="page toolpage">${head}<div class="errhelp">${d.problem === 'old' ? `<b>电脑上的 MinerU 是 ${esc(d.version)}，太旧了</b><div>要 4.0 以上。升级办法在「${esc(CFG())} → 大家共用的 → MinerU」，升级完回来点「刷新」。</div>`
+      : d.problem === 'nopython' ? `<b>找到了 MinerU，但用不了</b><div>找不到它用的 Python。到「${esc(CFG())} → 大家共用的 → MinerU」点「手动选择」指另一个，或者照「怎么装」重装一份。</div>`
+      : `<b>这台电脑上没找到 MinerU</b><div>没装的话，装法在「${esc(CFG())} → 大家共用的 → MinerU」：照着复制几行命令，装好回来点「刷新」。已经装在 conda 或自己的虚拟环境里的，到那里点「手动选择」，找到环境里的 mineru-kit。不装也不影响别的工具。</div>`}</div><div class="tacts"><button class="btn small primary" data-mhow>${d.problem === 'old' ? '怎么升级' : '怎么装'}</button></div></div>`;
     const rows = d.items.map(x => { const [lab, cls] = busy.has(x.path) ? [busy.get(x.path), 'amber'] : MU_STATE[x.state] || [x.state, '']; return `<label class="pickrow"><input type="checkbox" data-mcheck="${esc(x.path)}" ${sel.has(x.path) ? 'checked' : ''}>${fileIcon('pdf')}<span class="grow small ellipsis" title="${esc(x.path)}">${esc(x.path.split('/').pop())}<span class="muted">${x.path.includes('/') ? ' · ' + esc(x.path.slice(0, x.path.lastIndexOf('/'))) : ''}</span></span>${x.state === 'done' ? `<button class="linkish" data-opendoc="${esc(x.out)}">看全文</button>` : ''}<span class="chip ${cls}">${lab}</span></label>`; }).join('');
     return `<div class="page toolpage">${head}
       ${d.items.length ? `<div class="row" style="gap:8px;margin-bottom:6px"><span class="small muted grow">项目里 ${d.items.length} 个 PDF，选了 ${sel.size} 个</span><button class="linkish" data-mall>选上没转过的</button><button class="linkish" data-mnone>全不选</button></div><div class="picklist" style="max-height:none">${rows}</div>`
@@ -1171,7 +1120,7 @@
       ${x.backedUp.length ? `<div class="set-row"><span class="grow">同名的旧版先备份到了收件箱 .工作站/skills备份/<div class="sub2">${li(x.backedUp)}</div></span></div>` : ''}
       ${x.skipped.length ? `<div class="set-row"><span class="grow">没装的<div class="sub2">${li(x.skipped)}</div></span></div>` : ''}
       ${x.errors.length ? `<div class="set-row bad"><span class="grow">出错的<div class="sub2">${li(x.errors)}</div></span></div>` : ''}
-      <div class="set-row"><span class="grow small muted">以后要卸载：AI学术环境配置 → AI 程序 → 「第三方 skills」。工具要加输入框，打开工具点「编辑」。</span></div>
+      <div class="set-row"><span class="grow small muted">以后要卸载：${esc(CFG())} → AI 程序 → 「第三方 skills」。工具要加输入框，打开工具点「编辑」。</span></div>
       <div class="mfoot"><button class="btn" data-close>关闭</button>${x.tools.length ? '<button class="btn primary" id="ghSee">去看工具</button>' : ''}</div>`);
     const see = $('#ghSee'); if (see) see.onclick = () => { close(); try { localStorage.setItem(TOOLCAT_KEY, cat); } catch {} ui().active = 'store'; renderAll(); };
   }
@@ -1479,13 +1428,13 @@
     [/at capacity|overloaded|\b529\b|try a different model|server.?busy/i, '模型现在太忙', '过几分钟点「重试」；急的话换一个 AI 重做。'],
     [/rate.?limit|\b429\b|usage limit|hit your limit|quota|insufficient|credit|exceeded/i, '额度用完了，或请求太频繁', '等额度恢复后点「重试」；也可以换一个 AI 重做。'],
     [/登录|log ?in|authenticat|api key|token expired|unauthori[sz]ed|\b401\b/i, 'AI 程序没登录或登录过期', '按下面说的重新登录一次，再点「重试」。'],
-    [/requires approval|approval policy|审批|被拒|denied|not allowed/i, '工具调用被拦住了', '多半是 Zotero、下载 PDF 这类外部工具没配好：打开「AI学术环境配置」检查，再点「重试」。'],
+    [/requires approval|approval policy|审批|被拒|denied|not allowed/i, '工具调用被拦住了', '多半是 AI 要用的外部服务没放行：打开「' + CFG() + '」，在「额外放行的服务」里勾上它，再点「重试」。'],
     [/ENOTFOUND|ECONNRESET|ETIMEDOUT|network|socket hang up|timed? ?out|fetch failed|stream disconnected/i, '网络断了', '检查网络后点「重试」。'],
     [/model is not supported|model_not_found|unknown model|invalid model/i, '这个模型用不了', '换一个 AI 重做，或在 AI 程序自己的设置里换默认模型。'],
-    [/没找到可用的|找不到它/, 'AI 程序找不到了', '打开「AI学术环境配置」点「重新检测」，再点「重试」。']
+    [/没找到可用的|找不到它/, 'AI 程序找不到了', '打开「' + CFG() + '」点「重新检测」，再点「重试」。']
   ];
   // 「安装」装不进去（出错，或 AI 最后写了「装不进去：」）：复制安装指令，到 Claude Code / Codex 客户端里手动装（乔淼 10-21）
-  const INSTALL_OF = { '安装我的 skills 库': 'course', '安装文献数据库检索 skills': 'search', '安装 scansci-pdf': 'scansci', '安装 pandoc': 'pandoc', '安装 Zotero 服务': 'zotero' };
+  const INSTALL_OF = { '安装我的 skills 库': 'course' };
   const installWhat = r => { const m = /^环境配置 · (安装[^·]+?)(?: · .*)?$/.exec(r.title || ''); return m ? INSTALL_OF[m[1].trim()] : null; };
   const stuckHTML = r => installWhat(r) && (r.status === 'failed' || /装不进去/.test(r.lastMessage || ''))
     ? `<div class="tacts"><span class="grow small muted">装不进去？打开 ${esc(engineName(r.engine))} 客户端，粘贴指令手动安装</span><button class="btn small" data-copyinst="${esc(r.id)}">复制安装指令</button></div>` : '';
@@ -1498,7 +1447,7 @@
     const other = cands.find(e => isFake(e.id) === isFake(cur)) || cands[0];
     const otherTip = r.auto && r.chain ? (blocked ? '只把下一段交给它，后面各段还用原来分好的 AI' : '只把这一段交给它重做，后面各段还用原来分好的 AI') : '';
     return `<div class="errhelp"><b>${esc(hit[1])}</b><div>${esc(friendly || hit[2])}</div></div>
-      <div class="tacts"><button class="btn small" data-retry="${esc(r.id)}">${I('refresh')}重试</button>${other ? `<button class="btn small ghost" data-retry="${esc(r.id)}" data-engine="${esc(other.id)}"${otherTip ? ` title="${otherTip}"` : ''}>换 ${esc(other.name)} ${blocked ? '接着跑' : '重做'}</button>` : ''}<span class="grow"></span><button class="ib sm" data-help title="AI学术环境配置">${I('sliders')}</button></div>
+      <div class="tacts"><button class="btn small" data-retry="${esc(r.id)}">${I('refresh')}重试</button>${other ? `<button class="btn small ghost" data-retry="${esc(r.id)}" data-engine="${esc(other.id)}"${otherTip ? ` title="${otherTip}"` : ''}>换 ${esc(other.name)} ${blocked ? '接着跑' : '重做'}</button>` : ''}<span class="grow"></span><button class="ib sm" data-help title="${esc(CFG())}">${I('sliders')}</button></div>
       ${orig ? `<details class="errraw"><summary>原始信息</summary><div class="errbox">${esc(orig)}</div></details>` : ''}`;
   }
   // 任务的回复和按钮：右栏展开时、中间放大时共用（放大时消息在上面的对话里，这里不再重复）
@@ -1603,10 +1552,10 @@
     if (!p || !p.exists) { put(box, ''); return; }
     const a = agentState(p), e = (B.engines || []).find(x => x.id === p.engine), m = modelOf(p);
     // 骨架只在名字变了才重写；标记、句子、动作流各自一块，互不连累（标记重写会让旋转从头开始）
-    put(box, `<div class="agent"><div class="ahd"><span class="ag-mk"></span><div class="who"><div class="anm">${esc(B.agentName || 'Research Agent')}</div><div class="ag-say"></div></div><button class="abub" data-askopen title="跟 ${esc(B.agentName || 'Research Agent')} 说">${I('chat')}</button></div><div class="ag-meta"></div><div class="ag-feed"></div><div class="ag-ask"></div></div>`);
+    put(box, `<div class="agent"><div class="ahd"><span class="ag-mk"></span><div class="who"><div class="anm">${esc(AGENT())}</div><div class="ag-say"></div></div><button class="abub" data-askopen title="跟 ${esc(AGENT())} 说">${I('chat')}</button></div><div class="ag-meta"></div><div class="ag-feed"></div><div class="ag-ask"></div></div>`);
     put(box.querySelector('.ag-mk'), MARK(a.st));
     put(box.querySelector('.ag-say'), `<div class="say ${a.cls || ''}" data-mk="say" data-ms="${esc(a.say)}" title="${esc(a.tip || a.say)}">${esc(a.say)}</div>`);
-    put(box.querySelector('.ag-meta'), `<div class="ameta"><button class="engpick" data-engpick title="这个项目用哪个 AI 程序、哪个模型">${esc(e ? e.name : p.engine)} · ${esc(m || '默认')} ▾</button>${p.engineWas ? `<span class="small muted" title="这个项目原来选的 AI 程序在「AI学术环境配置」里停用了">原来用 ${esc(engineName(p.engineWas))}，已停用</span>` : ''}</div>${quotaHTML(p.engine, a.run)}`);
+    put(box.querySelector('.ag-meta'), `<div class="ameta"><button class="engpick" data-engpick title="这个项目用哪个 AI 程序、哪个模型">${esc(e ? e.name : p.engine)} · ${esc(m || '默认')} ▾</button>${p.engineWas ? `<span class="small muted" title="这个项目原来选的 AI 程序在「${esc(CFG())}」里停用了">原来用 ${esc(engineName(p.engineWas))}，已停用</span>` : ''}</div>${quotaHTML(p.engine, a.run)}`);
     const waitRun = a.st === 'wait' ? [...(S.runs || [])].filter(r => r.status === 'waiting').sort((x, y) => y.createdAt.localeCompare(x.createdAt))[0] : null;
     // 自动模式：第几段 / 共几段的分段条；工作站替你回了一次问题，闪一行字
     const ar = [...(S.runs || [])].filter(r => r.auto && r.chain && ['running', 'stopping', 'waiting', 'queued'].includes(r.status)).sort((x, y) => y.createdAt.localeCompare(x.createdAt))[0];
@@ -1631,11 +1580,11 @@
   // ---------- 收件箱一键梳理（10-18 第三轮）：AI 看一遍写计划 → 你在「梳理计划」里改、点「照这样做」→ 工作站搬文件、排后续工具，可撤销 ----------
   const inboxProj = () => (B.projects || []).find(p => p.inbox);
   async function loadPlan() { try { S.plan = await api('inbox/plan', 'GET'); } catch { S.plan = null; } loadTodos(); renderAgent(); if (curTab() && (curTab().triage || onDash())) renderPane(); }
-  async function startTriage(from) {
+  async function startTriage(from, note) {
     const ib = inboxProj(); if (!ib) return;
     if (B.current !== ib.id && !(await switchProject(ib.id))) return;
     try {
-      askNotify(); const r = await api('inbox/triage', 'POST', {});
+      askNotify(); const r = await api('inbox/triage', 'POST', note ? { note } : {});
       if (from) requestAnimationFrame(() => fly(from, $('#r-agent .ag-mk')));
       toast(r.status === 'queued' ? '已排队：梳理收件箱' : `已交给 ${engineName(r.engine)}：梳理收件箱`); S.expanded = r.id; loadRuns(); refreshProjects(); poll();
     } catch (e) { toast(e.message); }
@@ -1647,38 +1596,67 @@
     return `<option value="">项目根目录</option>${list.map(f => `<option ${f === cur ? 'selected' : ''}>${esc(f)}</option>`).join('')}`;
   }
   // 梳理出来的要做的事：内容 1.3.3 起统一放「待办」（todos.cjs；1.4.1 起在 Dashboard），这里只说一句
-  function todoHTML(pl) {
+  function todoHTML(pl, dash) {
     const n = (pl.todos || []).length; if (!n) return '';
-    return `<div class="trih"><span class="muted small">还理出 ${n} 件要做的事，放在 Dashboard 的「待办」里${pl.applied ? '' : '；相关文件要先「照这样做」放好才能开始'}。</span></div>`;
+    return `<div class="trih"><span class="muted small">还理出 ${n} 件要做的事，放在${dash ? '下面' : ' Dashboard 的'}「待办」里${pl.applied ? '' : '；相关文件要先「照这样做」放好才能开始'}。</span></div>`;
+  }
+  // 计划下面直接留一个对话框（10-30 乔淼，取代「点右边的对话气泡说」）：接着写这份计划的那次梳理说，AI 照着改计划；页面上改过的一起带过去
+  const triAskHTML = busy => { const who = esc(AGENT());
+    return `<div class="askbox triask"><textarea data-tri-ask rows="1" ${busy ? 'disabled' : ''} placeholder="${busy ? who + ' 正在改，改好的计划会直接换到这里' : `不满意就跟 ${who} 说，比如：第 3 个是导师的批注，放进投稿测试`}">${busy ? '' : esc(S.triAsk || '')}</textarea><button class="send" data-tri-ask-go title="发出去（回车）" ${busy ? 'disabled' : ''}>${I('send')}</button></div>`; };
+  async function triAsk(from) {
+    const ta = $('#pane-main [data-tri-ask]'), text = ta ? ta.value.trim() : '', d = S.plan, pl = d && d.plan;
+    if (!text) return ta && ta.focus();
+    if (!pl || S.triSending) return;
+    const ps = d.projects || [], orig = new Map(pl.items.map(x => [x.file, x]));
+    const where = x => x.project === 'keep' ? '留在收件箱' : x.project === 'archive' ? '不用了 · 归档' : x.project === 'trash' ? '不用了 · 移进' + TRASH
+      : (x.project.startsWith('new:') ? `新建项目「${x.project.slice(4)}」` : `「${(ps.find(p => p.id === x.project) || {}).name || x.project}」`) + (x.folder ? ' / ' + x.folder : '');
+    const mine = triItems(pl).filter(x => { const o = orig.get(x.file); return x.exists && o && (o.project !== x.project || o.folder !== x.folder || o.follow.join() !== x.follow.join()); })
+      .map(x => `- ${x.file} → ${where(x)}${x.follow.length ? '，PDF 入库' : orig.get(x.file).follow.length ? '，不入库' : ''}`);
+    const msg = text + (mine.length ? `\n\n我已经在页面上改了这几个，改计划时照这样写（除非我上面另说）：\n${mine.join('\n')}` : '');
+    const run = [...(S.runs || [])].filter(r => r.title === '梳理收件箱' && r.sessionId).sort((x, y) => y.createdAt.localeCompare(x.createdAt))[0];
+    S.triSending = true;
+    try {
+      if (run) { // 接着那次梳理的对话说
+        replied(await api(`runs/${run.id}/reply`, 'POST', { text: msg + '\n\n（要改计划就直接改 .工作站/梳理计划.json：还是只改计划，不动任何文件；改完用一两句话告诉我改了什么，我在 Dashboard 的收件箱里看。）' }));
+        S.expanded = run.id; requestAnimationFrame(() => fly(from, $('#r-agent .ag-mk'))); afterTask();
+      } else await startTriage(from, msg); // 那次梳理已经从右栏清掉了：带着这句话重新梳理一次
+      S.triAsk = ''; if (ta) { ta.value = ''; ta.blur(); }
+    } catch (err) { toast(err.message); }
+    S.triSending = false;
   }
   const TRASH = navigator.platform.startsWith('Win') ? '回收站' : '废纸篓', NOFOLDER = ['keep', 'archive', 'trash'];
+  // 页面上改过的「去哪」「哪个文件夹」「入库」记在 S.triEdit（10-30）：Dashboard 隔一会儿就重画，不记会被打回 AI 写的；换了一份计划就作废
+  const triItems = pl => { const e = S.triEdit && S.triEdit.at === pl.at ? S.triEdit.items : {}; return pl.items.map(x => e[x.file] ? { ...x, ...e[x.file] } : x); };
   function triageHTML() {
     const d = S.plan, pl = d && d.plan, ib = inboxProj();
     const head = `<div class="phead"><h1>梳理计划</h1></div>`;
     const undo = d && d.canUndo ? `<button class="btn ghost small" data-tri-undo>撤销上次梳理</button>` : '';
     const res = S.triResult ? `<div class="trires">${S.triResult}</div>` : '';
     if (!pl || !pl.items.length) return `<div class="page">${head}${res}<div class="trifoot">${ib && ib.inboxNew ? `<button class="btn" data-triage>${I('wand')}一键梳理（${ib.inboxNew} 个新文件）</button>` : ''}${undo}</div></div>`;
+    const foot = pl.applied ? `<div class="trifoot"><span class="muted small">这份计划已经执行过了。</span>${undo}${ib && ib.inboxNew ? `<button class="btn" data-triage>${I('wand')}再梳理一次（${ib.inboxNew} 个新文件）</button>` : ''}</div>`
+      : `<div class="trifoot"><button class="btn" data-tri-apply>照这样做</button>${undo}<span class="muted small" title="比如：第 3 个是导师的批注，放进投稿测试">不满意就点右边的对话气泡跟 ${esc(AGENT())} 说</span></div>`;
+    return `<div class="page">${head}${res}<div class="tris">${planRows(d, pl)}</div>${foot}${todoHTML(pl)}</div>`;
+  }
+  // 梳理计划一个文件一行：去哪个项目、哪个文件夹、要不要入库、为什么（「梳理计划」标签页和 Dashboard 收件箱共用）
+  function planRows(d, pl) {
     const ps = d.projects || [], news = [...new Set(pl.items.map(x => x.project).filter(v => v.startsWith('new:')))];
-    const rows = pl.items.map((x, i) => {
+    return triItems(pl).map((x, i) => {
       const opt = (v, l) => `<option value="${esc(v)}" ${x.project === v ? 'selected' : ''}>${esc(l)}</option>`;
       // 不用了（内容 1.3.10）：归档到 收件箱/已归档/（以后不再梳理），或移进废纸篓；都能「撤销上次梳理」
       const tgt = `<select data-tri-proj ${x.exists && !pl.applied ? '' : 'disabled'}>${opt('keep', '留在收件箱')}${ps.map(p => opt(p.id, p.name)).join('')}${news.map(v => opt(v, '新建项目「' + v.slice(4) + '」')).join('')}<option disabled>──────</option>${opt('archive', '不用了 · 归档')}${opt('trash', '不用了 · 移进' + TRASH)}</select>`;
       const fol = `<select data-tri-folder ${x.exists && !pl.applied && !NOFOLDER.includes(x.project) ? '' : 'disabled'}>${folderOpts(x.project, x.folder)}</select>`;
       // 「PDF 入库」只给 PDF / epub：用 Zotero 服务入库，分类名 = 项目名，留在收件箱的进「收件箱」分类（10-23）
       const fl = !/\.(pdf|epub)$/i.test(x.file) ? '' : Object.entries(d.follow || {}).map(([k, l]) => `<label class="tfl" title="用 Zotero 服务入库，放进和项目同名的分类；留在收件箱的放进「收件箱」分类"><input type="checkbox" data-tri-follow value="${esc(k)}" ${x.follow.includes(k) ? 'checked' : ''} ${x.exists && !pl.applied ? '' : 'disabled'}>${esc(l)}</label>`).join('');
-      return `<div class="tri ${x.exists ? '' : 'gone'}" data-tri="${i}" data-name="${esc(x.file)}"><div class="tr1">${fileIcon(kindOf(x.file))}<b class="ellipsis" title="${esc(x.file)}">${esc(x.file)}</b>${x.kind ? `<span class="chip">${esc(x.kind)}</span>` : ''}${x.exists ? '' : '<span class="chip">已不在收件箱</span>'}</div>
+      return `<div class="tri ${x.exists ? '' : 'gone'}" data-tri="${i}" data-name="${esc(x.file)}"><div class="tr1">${fileIcon(kindOf(x.file))}<b class="ellipsis" title="${esc(x.file)}${x.exists ? '（点开看看）' : ''}" ${x.exists ? `data-file="${esc(x.file)}"` : ''}>${esc(x.file)}</b>${x.kind ? `<span class="chip">${esc(x.kind)}</span>` : ''}${x.exists ? '' : '<span class="chip">已不在收件箱</span>'}</div>
         <div class="tr2"><span class="lab">去</span>${tgt}${fol}<span class="grow"></span>${fl}</div>${x.reason ? `<div class="tr3">${esc(x.reason)}</div>` : ''}</div>`;
     }).join('');
-    const foot = pl.applied ? `<div class="trifoot"><span class="muted small">这份计划已经执行过了。</span>${undo}${ib && ib.inboxNew ? `<button class="btn" data-triage>${I('wand')}再梳理一次（${ib.inboxNew} 个新文件）</button>` : ''}</div>`
-      : `<div class="trifoot"><button class="btn" data-tri-apply>照这样做</button>${undo}<span class="muted small" title="比如：第 3 个是导师的批注，放进投稿测试">不满意就点右边的对话气泡跟 ${esc(B.agentName || 'Research Agent')} 说</span></div>`;
-    return `<div class="page">${head}${res}<div class="tris">${rows}</div>${foot}${todoHTML(pl)}</div>`;
   }
   async function applyTriage() {
     const items = [...document.querySelectorAll('#pane-main .tri')].filter(r => !r.classList.contains('gone')).map(r => ({
       file: r.dataset.name, project: r.querySelector('[data-tri-proj]').value, folder: r.querySelector('[data-tri-folder]').value,
       follow: [...r.querySelectorAll('[data-tri-follow]:checked')].map(c => c.value) }));
     try {
-      const r = await api('inbox/apply', 'POST', { items }); Object.assign(B, r.config);
+      const r = await api('inbox/apply', 'POST', { items }); Object.assign(B, r.config); S.triEdit = null;
       S.triResult = [r.moved.length ? `移走了 ${r.moved.length} 个：${r.moved.map(m => esc(m.to)).join('、')}` : '', r.kept.length ? `留在收件箱 ${r.kept.length} 个` : '', (r.archived || []).length ? `归档了 ${r.archived.length} 个（在收件箱的「已归档」文件夹里，以后梳理不再看）` : '', (r.trashed || []).length ? `移进${r.trashName} ${r.trashed.length} 个${r.trashUndo ? '' : `（要找回去${r.trashName}里还原）`}` : '', r.queued.length ? `排上了后续动作：${r.queued.map(esc).join('、')}` : '', r.errors.length ? `<span class="bad">没做成：${r.errors.map(esc).join('；')}</span>` : ''].filter(Boolean).join('<br>');
       toast(`梳理好了：移走 ${r.moved.length} 个${(r.archived || []).length ? `，归档 ${r.archived.length} 个` : ''}${(r.trashed || []).length ? `，移进${r.trashName} ${r.trashed.length} 个` : ''}${r.queued.length ? '，排了 ' + r.queued.length + ' 个后续任务' : ''}`);
       renderAll(); loadFiles(); await loadPlan(); poll();
@@ -1695,12 +1673,7 @@
     if (!p || !p.exists) return null;
     const runs = [...(S.runs || [])].sort((x, y) => y.createdAt.localeCompare(x.createdAt));
     if (runs.some(r => ['running', 'stopping', 'queued', 'waiting'].includes(r.status))) return null;
-    if (p.inbox) { // 收件箱：有没执行的梳理计划 → 去看；有新文件 → 一键梳理
-      const pl = S.plan && S.plan.plan, n = pl && !pl.applied ? pl.items.filter(x => x.exists).length : 0;
-      const s = n ? { key: 'plan:' + pl.at, text: `梳理计划好了：${n} 个文件，每个都写了放哪、为什么${pl.todos && pl.todos.length ? `；还理出 ${pl.todos.length} 件要做的事` : ''}。`, btn: '查看并执行', act: { type: 'plan' } }
-        : p.inboxNew ? { key: 'triage:' + p.inboxNew, text: `收件箱里有 ${p.inboxNew} 个新文件，要我看一遍、给出每个放哪吗？`, btn: '一键梳理', act: { type: 'triage' } } : null;
-      return s && !DISMISS[p.id + ':' + s.key] ? s : null;
-    }
+    if (p.inbox) return null; // 收件箱：右栏 AI 卡下面不出建议（10-30 乔淼）：一键梳理、梳理计划、照这样做都在 Dashboard 的收件箱卡片里
     const files = (S.files || []).map(f => f.path), has = re => files.some(f => re.test(f));
     const wfs = p.workflows || [], last = (p.activity || [])[0];
     const wfName = id => ((B.workflows || []).find(w => w.id === id) || {}).name || id;
@@ -1785,7 +1758,8 @@
     }
     if (a.type === 'todo') return startTodo(a.id, from);
     if (a.type === 'triage') return startTriage(from);
-    if (a.type === 'plan') { await loadPlan(); return openTab({ id: 'triage', triage: true }); }
+    // 看梳理计划：去 Dashboard，滚到收件箱里的计划那里（10-30 乔淼：不另开标签页）
+    if (a.type === 'plan') { await loadPlan(); openTab({ id: 'store' }); return requestAnimationFrame(() => { const el = $('#dash-plan'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }); }
     // 工作流：打开它，跳到那一阶段；直接执行的带一个一次性 nonce（工作站只认自己刚发的这个）
     const g = { wf: a.wf, stage: a.stage, preset: a.preset, nonce: a.run ? Math.random().toString(36).slice(2) + Date.now().toString(36) : '' };
     if (g.nonce) { S.goNonce = { n: g.nonce, wf: a.wf, at: Date.now() }; if (from) requestAnimationFrame(() => fly(from, $('#r-agent .ag-mk'))); }
@@ -1862,7 +1836,7 @@
       box.innerHTML = `<div class="askwrap">${m.follow && m.kind !== 'reply' ? `<div class="amode"><button data-amode="new">开新任务</button><button class="on" data-amode="follow">接着「${esc(short(m.follow.title))}」</button></div>` : ''}<div class="small muted ibnote">「${esc(short(tgt.title))}」的对话在中间开着，在那里${m.kind === 'reply' ? '回复' : '接着说'}。<button class="linkish" data-goconv="${esc(tgt.id)}">去中间</button></div></div>`; return; }
     const head = m.kind === 'reply' ? `<div class="amode"><span>回复「${esc(short(m.run.title))}」</span></div>`
       : m.follow ? `<div class="amode"><button class="${fol ? '' : 'on'}" data-amode="new">开新任务</button><button class="${fol ? 'on' : ''}" data-amode="follow" title="${esc(m.follow.title)}">接着「${esc(short(m.follow.title))}」</button></div>` : '';
-    box.innerHTML = `<div class="askwrap">${head}<div class="atts hide"></div><div class="askbox"><textarea id="askText" rows="2" placeholder="${m.kind === 'reply' ? '回复…' : fol ? '追问…' : '跟 ' + esc(B.agentName || 'Research Agent') + ' 说…'}"></textarea><button class="send" data-ask-go title="发出去（回车）">${I('send')}</button></div>${m.kind === 'reply' || fol ? '' : `<div class="askfoot"><button class="btn small primary tdput" data-ask-todo title="交给 AI 把这段话拆成几条待办（只拆、不做），放进 Dashboard 的「待办」">${I('plus')}放进待办</button></div>`}</div>`;
+    box.innerHTML = `<div class="askwrap">${head}<div class="atts hide"></div><div class="askbox"><textarea id="askText" rows="2" placeholder="${m.kind === 'reply' ? '回复…' : fol ? '追问…' : '跟 ' + esc(AGENT()) + ' 说…'}"></textarea><button class="send" data-ask-go title="发出去（回车）">${I('send')}</button></div>${m.kind === 'reply' || fol ? '' : `<div class="askfoot"><button class="btn small primary tdput" data-ask-todo title="交给 AI 把这段话拆成几条待办（只拆、不做），放进 Dashboard 的「待办」">${I('plus')}放进待办</button></div>`}</div>`;
     const ta = $('#askText'); ta.value = val; ta.placeholder += '（可以拖文件进来、粘贴截图）';
     if (inboxNewAsk(m)) box.querySelector('.askwrap').insertAdjacentHTML('beforeend', `<div class="small muted ibnote">收件箱只用来梳理，不在这里开新任务。要做事，先在左栏选一个项目（或<button class="linkish" data-dash-new>新建项目</button>）；也可以写下来点「放进待办」，以后在项目里开始。</div>`);
     drawAtts();
@@ -1899,7 +1873,7 @@
       ${t.status === 'done' ? (t.run ? `<button class="linkish" data-td-open="${esc(t.run)}" data-td-proj="${esc(t.project)}">看</button>` : '')
         : t.run && t.status !== 'stuck' ? `<button class="linkish" data-td-open="${esc(t.run)}" data-td-proj="${esc(t.project)}">去看</button>`
         : t.act ? `<button class="btn small" data-td-start="${esc(t.id)}">${t.status === 'started' ? '再开' : '开始'}</button>`
-        : t.wait ? `<button class="btn small" disabled title="相关文件还在收件箱：先在「梳理计划」里点「照这样做」">开始</button>` : `<button class="btn small" data-td-start="${esc(t.id)}">${t.status === 'stuck' ? '重开' : '开始'}</button>`}
+        : t.wait ? `<button class="btn small" disabled title="相关文件还在收件箱：先在上面的梳理计划里点「照这样做」">开始</button>` : `<button class="btn small" data-td-start="${esc(t.id)}">${t.status === 'stuck' ? '重开' : '开始'}</button>`}
       <button class="ib sm tdel" data-td-del="${esc(t.id)}" title="删掉这条">×</button></div>`;
   // 右栏不再放待办（T4）：都在 Dashboard。待办变了、正开着 Dashboard 就重画
   function renderTodos() {
@@ -1931,7 +1905,7 @@
       items.push({ label: '默认' + (e.model || (e.defaults || {}).model ? `（${esc(e.model || e.defaults.model)}）` : ''), on: cur === '', run: () => pickEngine(e.id, '') });
       for (const m of (e.models || [])) items.push({ label: esc(m), on: cur === m, run: () => pickEngine(e.id, m) });
     }
-    if (!items.length) return toast('没找到可用的 AI 程序，打开「AI学术环境配置」看看');
+    if (!items.length) return toast('没找到可用的 AI 程序，打开「' + CFG() + '」看看');
     menu(anchor, items);
   }
   function pickEngine(engine, model) {
@@ -2098,7 +2072,7 @@
       for (const f of files) { if (f.kind === 'dir' && !f.path.slice(0, -1).includes('/')) continue; const top = f.path.includes('/') ? f.path.split('/')[0] + '/' : ''; (g[top] = g[top] || []).push(f); }
       list = Object.keys(g).sort().map(k => { const fold = k && FOLD['dir:' + B.current + ':' + k]; return (k ? `<div class="fgrp ${fold ? 'shut' : ''}" data-fgrp="${esc(k)}">${I('chev')}<span>${esc(k)}</span><span class="n">${g[k].length}</span></div>` : '') + (fold ? '' : g[k].map(f => fileRow(f, k ? f.path.slice(k.length) : f.path, '')).join('')); }).join('');
     }
-    put(box, `<div class="fhead"><button class="ftog ${shut ? 'shut' : ''}" data-ftoggle title="${shut ? '展开' : '收起'}">${I('chev')}<span>${p && p.inbox ? '收件箱' : '文件'}</span></button>${p && p.inbox && p.inboxNew ? `<span class="ibadge" title="还没梳理的文件">${p.inboxNew}</span><button class="ib sm" data-triage title="一键梳理：Research Agent 看一遍，给出每个文件放哪的计划">${I('wand')}</button>` : ''}<span class="grow"></span>${shut ? '' : `${p && p.inbox ? '' : `<div class="seg"><button class="${S.fileMode === 'recent' ? 'on' : ''}" data-fmode="recent">最近</button><button class="${S.fileMode === 'all' ? 'on' : ''}" data-fmode="all">全部</button></div>`}<button class="ib sm" data-act="refresh-files" title="刷新">${I('refresh')}</button>`}</div>${list}`);
+    put(box, `<div class="fhead"><button class="ftog ${shut ? 'shut' : ''}" data-ftoggle title="${shut ? '展开' : '收起'}">${I('chev')}<span>${p && p.inbox ? '收件箱' : '文件'}</span></button>${p && p.inbox && p.inboxNew ? `<span class="ibadge" title="${triLeft(p) ? '还没梳理的文件' : '梳理好了，在 Dashboard 里看计划、点「照这样做」'}">${p.inboxNew}</span>${triWand(p)}` : ''}<span class="grow"></span>${shut ? '' : `${p && p.inbox ? '' : `<div class="seg"><button class="${S.fileMode === 'recent' ? 'on' : ''}" data-fmode="recent">最近</button><button class="${S.fileMode === 'all' ? 'on' : ''}" data-fmode="all">全部</button></div>`}<button class="ib sm" data-act="refresh-files" title="刷新">${I('refresh')}</button>`}</div>${list}`);
     const { entered } = fx(box, B.current + ':' + S.fileMode) || { entered: [] };
     // AI 刚写出的文件：从动作流里那一步飞进文件栏
     for (const row of entered) { const src = [...document.querySelectorAll('#r-agent .feed li[data-path]')].find(li => li.dataset.path === row.dataset.file) || (S.lastWrites && S.lastWrites.has(row.dataset.file) ? $('#r-agent .ag-mk') : null); if (src) { row.style.visibility = 'hidden'; fly(src, row, row.dataset.file.split('/').pop()).then(() => { row.style.visibility = ''; row.classList.remove('fx-enter'); void row.offsetWidth; row.classList.add('fx-enter'); }); } }
@@ -2207,13 +2181,13 @@
     if (a && a.dataset.act === 'settings') return openSettings();
     if (a && a.dataset.act === 'upd-apply') return api('update/apply', 'POST', {}).then(() => toast('正在更新……')).catch(err => toast(err.message));
     if (a && a.dataset.act === 'upd-shell') return api('update/download-shell', 'POST', {}).catch(err => toast(err.message));
-    if (a && a.dataset.act === 'upd-restart') return modal(`新版本 ${esc((S.mupd || {}).ready || '')} 已下好`, `<p style="line-height:1.7;margin:0">关掉 POPPER 窗口再打开，就是新版本了。有 AI 任务在跑的话，等它做完再关。</p><div class="mfoot"><span class="grow"></span><button class="btn" data-close>好</button></div>`);
+    if (a && a.dataset.act === 'upd-restart') return modal(`新版本 ${esc((S.mupd || {}).ready || '')} 已下好`, `<p style="line-height:1.7;margin:0">关掉 ${esc(APP())} 窗口再打开，就是新版本了。有 AI 任务在跑的话，等它做完再关。</p><div class="mfoot"><span class="grow"></span><button class="btn" data-close>好</button></div>`);
     if (a && a.dataset.act === 'upd-err') return checkUpdateNow();
-    const tg = e.target.closest('[data-triage]'); if (tg) { e.stopPropagation(); return startTriage(tg); }
+    const tg = e.target.closest('[data-triage]'); if (tg) { e.stopPropagation(); return tg.disabled || startTriage(tg); }
     // 文件区（在当前项目里面，要先于「点项目」处理）
     const fl = e.target.closest('[data-file]'); if (fl) return openDoc(fl.dataset.file);
     const fm = e.target.closest('[data-fmode]'); if (fm) { S.fileMode = fm.dataset.fmode; return renderFiles(); }
-    if (a && a.dataset.act === 'refresh-files') return loadFiles();
+    if (a && a.dataset.act === 'refresh-files') { if (proj() && proj().inbox) refreshProjects(); return loadFiles(); } // 收件箱：「还没梳理」的个数、「一键梳理」亮不亮也跟着刷新
     if (e.target.closest('[data-ftoggle]')) { setFold('files:' + B.current, !FOLD['files:' + B.current]); return renderFiles(); }
     const fg = e.target.closest('[data-fgrp]'); if (fg) { const k = 'dir:' + B.current + ':' + fg.dataset.fgrp; setFold(k, !FOLD[k]); return renderFiles(); }
     if (e.target.closest('#l-files')) return;
@@ -2264,7 +2238,7 @@
   // Dashboard 和收件箱提示里的：新建项目（气泡里那句）、看梳理计划、进项目（T4）
   function dashClick(e) {
     if (e.target.closest('[data-dash-new]')) return newProject(), true;
-    if (e.target.closest('[data-dash-plan]')) return loadPlan().then(() => openTab({ id: 'triage', triage: true })), true;
+    if (e.target.closest('[data-dash-plan]')) return (S.dashPlanOpen = !S.dashPlanOpen, renderPane()), true; // 照着做过的那份计划：就地展开 / 收起
     const dp = e.target.closest('[data-dash-proj]'); if (dp) return switchProject(dp.dataset.dashProj), true;
     return false;
   }
@@ -2292,7 +2266,8 @@
     }
     if (e.target.closest('[data-tri-apply]')) return applyTriage();
     if (e.target.closest('[data-tri-undo]')) return undoTriage();
-    const tgp = e.target.closest('[data-triage]'); if (tgp) return startTriage(tgp);
+    const tak = e.target.closest('[data-tri-ask-go]'); if (tak) return tak.disabled || triAsk(tak);
+    const tgp = e.target.closest('[data-triage]'); if (tgp) return tgp.disabled || startTriage(tgp);
     if (curTab()?.conv && await taskClick(e)) return;
     const df = e.target.closest('.convfoot [data-file], .conv [data-file]'); if (df) return openDoc(df.dataset.file);
     const c = e.target.closest('[data-openwf]'); if (c) return openTab({ id: 'wf:' + c.dataset.openwf, wf: c.dataset.openwf });
@@ -2325,6 +2300,8 @@
     const t = curTab(), run = $('#pane-main [data-trun]');
     if (t && t.tool && run && !run.disabled && !layer.innerHTML) { e.preventDefault(); run.click(); }
   });
+  // 梳理计划下面的对话框：回车发出去（Shift+回车换行；⌘/Ctrl+回车由上面那条点「发出去」）
+  $('#pane-main').addEventListener('keydown', e => { if (e.target.matches('[data-tri-ask]') && e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.isComposing) { e.preventDefault(); triAsk($('#pane-main [data-tri-ask-go]')); } });
   // 工具页的输入：记在标签页上，不重画（免得打断输入），只更新「执行」按钮
   // 「用哪个 skill」的搜索结果：方向键挑、回车选、Esc 收起；点一下也行（用 mousedown，免得输入框先失焦把列表收掉）
   $('#pane-main').addEventListener('keydown', e => {
@@ -2345,6 +2322,7 @@
   $('#pane-main').addEventListener('focusin', e => { if (e.target.matches && e.target.matches('[data-skpick],[data-skmq]') && e.target.value.trim()) skillResults(e.target); });
   $('#pane-main').addEventListener('input', e => {
     if (e.target.matches('.convfoot textarea[data-reply-text]')) { (S.convDraft = S.convDraft || {})[e.target.dataset.replyText] = e.target.value; return; }
+    if (e.target.matches('[data-tri-ask]')) { S.triAsk = e.target.value; e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; return; } // 梳理计划下面的对话框：写了一半的记着，跟着字数长高
     const ct = curTab();
     if (ct && ct.toolEdit && ct.draft) { // 添加 / 编辑工具的表单：值记进草稿
       const d = ct.draft, te = e.target.closest('[data-te]'), ti = e.target.closest('[data-tein]');
@@ -2370,6 +2348,8 @@
   $('#pane-main').addEventListener('change', e => {
     if (e.target.matches('[data-td-done]')) { api('todos/done', 'POST', { id: e.target.dataset.tdDone, done: e.target.checked }).then(r => { S.todos = r; renderTodos(); }, err => toast(err.message)); return; }
     if (e.target.matches('[data-tri-proj]')) { const f = e.target.closest('.tri').querySelector('[data-tri-folder]'); if (f) { f.disabled = NOFOLDER.includes(e.target.value); f.innerHTML = folderOpts(e.target.value, ''); } }
+    const tr = e.target.closest('.tri'), pl = S.plan && S.plan.plan; // 梳理计划里改了哪一行，记下来，重画不丢
+    if (tr && pl) { if (!S.triEdit || S.triEdit.at !== pl.at) S.triEdit = { at: pl.at, items: {} }; S.triEdit.items[tr.dataset.name] = { project: tr.querySelector('[data-tri-proj]').value, folder: tr.querySelector('[data-tri-folder]').value, follow: [...tr.querySelectorAll('[data-tri-follow]:checked')].map(c => c.value) }; return; }
     const t = curTab(); if (!t || !t.tool) return;
     const sc = e.target.closest('[data-skm-check]'); if (sc) { t.skmOpen = true; const cur = skmList(t.vals[sc.dataset.skmCheck]); return skmSet(sc.dataset.skmCheck, sc.checked ? [...cur, sc.value] : cur.filter(n => n !== sc.value)); }
     const mc = e.target.closest('[data-mcheck]'); if (mc) { const s = new Set(t.msel || []); if (mc.checked) s.add(mc.dataset.mcheck); else s.delete(mc.dataset.mcheck); t.msel = [...s]; $('#pane-main').__html = null; return renderPane(); }
@@ -2469,7 +2449,7 @@
     const am = e.target.closest('[data-amode]'); if (am) { S.amode = am.dataset.amode; drawAsk(); const ta = $('#askText'); if (ta) ta.focus(); return; }
     const ep = e.target.closest('[data-engpick]'); if (ep) return engineMenu(ep);
     const m = e.target.closest('[data-fmode]'); if (m) { S.fileMode = m.dataset.fmode; return renderFiles(); }
-    const a = e.target.closest('[data-act]'); if (a && a.dataset.act === 'refresh-files') return loadFiles();
+    const a = e.target.closest('[data-act]'); if (a && a.dataset.act === 'refresh-files') { if (proj() && proj().inbox) refreshProjects(); return loadFiles(); }
   });
   // 回到窗口时重新读一遍项目和文件（用户可能在访达里改了东西）；内容没变就不动页面
   window.addEventListener('focus', () => { refreshProjects(); loadFiles(); loadUpd(); });

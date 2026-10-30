@@ -1,4 +1,5 @@
 'use strict';
+const { APP } = require('./app-name.cjs');
 // Codex 引擎：调用学员本机已登录的 Codex 命令行（codex exec），用它自己的沙箱把写权限限制在工作目录。
 const fs = require('node:fs');
 const path = require('node:path');
@@ -173,8 +174,8 @@ module.exports = {
   // 「怎么装」弹窗用（10-22 乔淼：Mac 上 ChatGPT 桌面版会自带 Codex 命令行版，Windows 上不会）。命令来自 OpenAI 官方安装脚本 chatgpt.com/codex/install.sh / install.ps1
   install: {
     note: common.WIN
-      ? 'POPPER 用的是 Codex 命令行版。Windows 上的 ChatGPT 桌面版不会自动带上它，要按下面单独装。'
-      : 'POPPER 用的是 Codex 命令行版。Mac 上装了 ChatGPT 桌面版一般就自带一份，POPPER 会自己找到；找不到再按下面装。',
+      ? APP + ' 用的是 Codex 命令行版。Windows 上的 ChatGPT 桌面版不会自动带上它，要按下面单独装。'
+      : APP + ' 用的是 Codex 命令行版。Mac 上装了 ChatGPT 桌面版一般就自带一份，' + APP + ' 会自己找到；找不到再按下面装。',
     shell: common.WIN ? 'PowerShell' : '终端',
     open: common.WIN ? '点开始菜单，搜「PowerShell」，打开它' : '按 ⌘ + 空格，搜「终端」，打开它',
     cmd: common.WIN ? 'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"' : 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',

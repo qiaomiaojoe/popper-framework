@@ -25,7 +25,7 @@
   <a href="#和-popper-的关系">和 POPPER 的关系</a>
 </p>
 
-![POPPER Framework：左边是项目和文件，中间打开 AI 写好的文件，右边是 Research Agent 和任务](docs/images/result.jpg)
+![POPPER Framework：左边是项目和文件，中间打开 AI 写好的文件，右边是 AI 和任务](docs/images/result.jpg)
 
 POPPER Framework 是 [POPPER · AI学术工作站](https://github.com/qiaomiaojoe/ai-academic-app) 的框架：界面、设置、布局都和 POPPER 一样，项目、收件箱、待办、任务、跟 AI 说、配置页一样不少，只是**不带课程的工作流和工具**。
 
@@ -43,12 +43,12 @@ POPPER Framework 是 [POPPER · AI学术工作站](https://github.com/qiaomiaojo
 
 ## 一个工作台该有的，它都有
 
-![项目主页：工作流（导入）、工具（示范：三条要点）、右栏 Research Agent](docs/images/home.jpg)
+![项目主页：工作流（导入、造工作流）、工具（示范：三条要点）、右栏的 AI](docs/images/home.jpg)
 
 - **项目**：每个项目一个文件夹，左栏直接看文件；新建项目时自动写好给 AI 看的项目说明（AGENTS.md），AI 按里面的「文件放哪」放产出。
 - **工具**：填几个 AI 猜不到的输入，点「执行」。框架带一个示范工具「三条要点」，照它的样子写一个 JSON 文件，就是你的新工具；也可以在界面上「添加工具」。
 - **工作流**：一个独立的网页，把几步事情串起来，在隔开的页面里运行，碰不到工作台本身。自己造：点「导入」旁边的「造工作流」，说清楚从哪做到哪、想用哪些 skill，AI 先排好每一步给你看，你说可以再造成工作流网页，导入就能用。
-- **Dashboard、收件箱、待办**：零散文件拖进收件箱，一键梳理；要做的事放进待办，以后一键开始。
+- **Dashboard、收件箱、待办**：零散文件拖进收件箱，点「一键梳理」，AI 写好每个文件放哪的计划，就摊在 Dashboard 里：不合适的直接改，或者在计划下面跟 AI 说，满意了点「照这样做」，能撤销。要做的事放进待办，以后一键开始。
 - **跟 AI 说**：右上角的气泡，随时交代一件事，可以拖文件、粘贴截图。
 
 ## AI 在做什么，看得见
@@ -63,13 +63,16 @@ POPPER Framework 是 [POPPER · AI学术工作站](https://github.com/qiaomiaojo
 
 ## 用你已有的 AI，接你自己的 skills
 
-![AI学术环境配置：Claude Code、Codex、WorkBuddy，我的 skills 库，文献工具](docs/images/settings.jpg)
+![配置页：Claude Code、Codex、WorkBuddy，额外放行的服务，我的 skills 库](docs/images/settings.jpg)
 
-左下角「AI学术环境配置」一页管所有设置：
+左下角「My App 配置」一页管所有设置（My App 是你的 App 的名字，改了名就跟着变；右栏那位 AI 默认也叫「My App Agent」）：
 
 - **AI 程序**：Claude Code、Codex、WorkBuddy（腾讯，国内账号就能用），启用哪个、默认用哪个、各自的模型；Claude Code 的 5 小时额度直接显示。
 - **我的 skills 库**：你写的 skills 放在自己的 GitHub 仓库或阿里云 OSS 上，填个地址，一键装进 AI、一键更新。步骤见配置页里的「配置指南」。
-- **文献工具**：数据库检索 skills、scansci-pdf、Zotero、OpenAlex、pandoc、MinerU、Roughdraft，用得到的点「安装」。
+- **Roughdraft、MinerU**：md 文件在浏览器里批注、PDF 转成带页码的文字稿，用得到的点「怎么装」。
+- **版本**：你的 App 名字、版本号和你的署名，到手是「My App · 外壳 0.0.0 · 内容 0.0.0」，改成你自己的；下面单独一行「Built with POPPER framework」、用的框架版本和项目地址。
+
+框架不带文献工具（数据库检索 skills、scansci-pdf、Zotero、OpenAlex、pandoc）。要用的话自己装进 AI 程序；是 MCP 服务的，在「额外放行的服务」里勾上。
 
 ---
 
@@ -103,7 +106,7 @@ AI 会先读 [AGENTS.md](AGENTS.md)：哪个文件管什么、改完怎么看效
 
 想要一个双击就开、不用开黑窗口的 App：
 
-1. （可选）让 AI 把 `package.json` 里的 `productName` 改成你的 App 名，换掉 `构建素材/` 里的图标。
+1. （可选）让 AI 把 `package.json` 里的 `productName` 改成你的 App 名、`author` 改成你的名字，版本号改成你自己的，换掉 `构建素材/` 里的图标。
 2. 装一次打包工具（要下载约 100MB，国内用镜像）：
    ```bash
    ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm install --registry=https://registry.npmmirror.com
@@ -141,7 +144,7 @@ POPPER Framework 是它下面那一层：同一套界面和运行方式，拿掉
 
 以 [Apache License 2.0](LICENSE) 开源：可以用、改、再发布，包括商用；再发布时保留版权声明和 [NOTICE](NOTICE)，并标明改了哪些文件。
 
-「POPPER」名称和黑天鹅图标不在授权范围内。对外发布你的修改版时，请换上你自己的名字和图标（`package.json` 的 `productName`、`content/ui.js` 里的 `BRAND` 和 `LOGO`、`构建素材/` 里的图标）。
+「POPPER」名称和黑天鹅图标不在授权范围内。对外发布你的修改版时，请换上你自己的名字和图标（`package.json` 的 `productName`、`author`，`content/ui.js` 里的 `BRAND` 和 `LOGO`，`构建素材/` 里的图标）。配置页「版本」下面那行「Built with POPPER framework」，请保留。
 
 内含的第三方组件：[PDF.js](https://github.com/mozilla/pdf.js)（Apache-2.0）。
 

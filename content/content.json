@@ -1,5 +1,5 @@
 {
-  "version": "0.2.4",
-  "minShell": "0.2.4",
-  "说明": "内容层：界面、运行时、AI 引擎、工作流的桥。从 POPPER（AI学术工作站）内容 1.4.1 切出来，去掉了课程的工作流和工具、自动更新。"
+  "version": "0.0.0",
+  "minShell": "0.0.0",
+  "说明": "内容层：界面、运行时、AI 引擎、工作流的桥。version 是你自己这个 App 的内容版本（到手是 0.0.0）；用的哪一版 POPPER Framework 见 package.json 的 popperFramework。"
 }

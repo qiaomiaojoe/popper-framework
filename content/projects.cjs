@@ -174,7 +174,7 @@ function createProjects({ dataDir, defaultProjectsDir, defaultEngine }) {
         return { id: w.id, name: w.name, icon: w.icon, done, total: w.stages.length, stages: w.stages.map(s => ({ name: s.name, done: s.done.some(f => stageDone(item.path, f)) })),
           used: done > 0 || acts.some(a => a.workflow === w.id) };
       }).filter(w => w.used);
-      return { ...p, workflows: used, activity: acts, ...(item.inbox && p.exists ? { inboxNew: inboxNew().length } : {}) };
+      return { ...p, workflows: used, activity: acts, ...(item.inbox && p.exists ? { inboxNew: inboxNew().length, inboxUnplanned: inboxUnplanned().length } : {}) };
     });
   }
 
@@ -207,6 +207,12 @@ function createProjects({ dataDir, defaultProjectsDir, defaultEngine }) {
     return names.filter(n => !SKIP(n) && !n.startsWith('.') && !['AGENTS.md', 'CLAUDE.md', ARCHIVE].includes(n)).sort(); // 「已归档」里的不再梳理（内容 1.3.10）
   }
   function inboxNew() { const seen = new Set(readJSON(seenFile(), [])); return inboxTop().filter(n => !seen.has(n)); }
+  // 梳理计划里写了、还没「照这样做」的不算没梳理（10-30 乔淼：梳理过了「一键梳理」灰掉，放进新文件再亮）
+  function inboxUnplanned() {
+    const pl = readJSON(path.join(inboxItem().path, META, '梳理计划.json'), null);
+    const has = new Set(pl && !pl.applied && Array.isArray(pl.items) ? pl.items.map(x => String((x && x.file) || '').replace(/^\/+/, '')) : []);
+    return inboxNew().filter(n => !has.has(n));
+  }
   // 上次梳理决定留在收件箱、现在还在的：新一轮梳理时一起再看一遍（10-23 乔淼：不然留下的会一直留着）
   function inboxKept() { const seen = new Set(readJSON(seenFile(), [])); return inboxTop().filter(n => seen.has(n)); }
   function markSeen(names) { const s = new Set(readJSON(seenFile(), [])); for (const n of names) s.add(n); writeJSON(seenFile(), [...s]); }

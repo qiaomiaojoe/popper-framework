@@ -1,4 +1,5 @@
 'use strict';
+const { APP, CFG } = require('./app-name.cjs');
 // MinerU：PDF 转带页码的 Markdown（内容 1.2.3，方案 设计/MinerU-方案.md，乔淼 10-24 定）。
 // 本机版、可选安装：学员自己用 uv 装 MinerU（配置里「怎么装」），POPPER 找到它以后，「读文献 → MinerU」工具由 POPPER 自己在后台转，不交给 AI——
 // 不花额度，也不会被 AI 的沙箱拦住下载模型。转好的放 文献/全文/<PDF 同名>.md，每页开头一行 <!-- 第 N 页 -->，读文献的 skill 优先读它。
@@ -114,7 +115,7 @@ const INSTALL = {
 // 「怎么升级」弹窗：电脑上是 MinerU 2.x / 3.x（命令叫 mineru，没有 mineru-kit），POPPER 的转换要 4.x
 const UPGRADE = {
   title: '升级 MinerU 到 4.x',
-  note: `电脑上已经有 MinerU，但版本太旧（POPPER 要 4.0 以上，4.0 起能在普通电脑的 CPU 上转、命令也换了）。按你当初怎么装的，选一种升级；升级不会删你转过的东西。升级完还要下一次新版的模型（4.0 的模型和旧版不通用）。`,
+  note: `电脑上已经有 MinerU，但版本太旧（${APP} 要 4.0 以上，4.0 起能在普通电脑的 CPU 上转、命令也换了）。按你当初怎么装的，选一种升级；升级不会删你转过的东西。升级完还要下一次新版的模型（4.0 的模型和旧版不通用）。`,
   shell, open: WIN ? '点开始菜单，搜「PowerShell」，打开它' : '按 ⌘ + 空格，搜「终端」，打开它',
   steps: [
     { say: '当初用 uv 装的（或者不记得了）：用 uv 装一份新的，最省事', cmd: `uv tool install --force --python 3.12 "${SPEC}"` },
@@ -179,8 +180,8 @@ function createMineru({ projects, custom = () => '' }) {
       const finish = (code, err) => { if (!finished) { finished = true; onExit(code, err); } };
       const fail = (msg, raw) => { emit({ kind: 'error', message: msg + (raw ? '\n\n原始信息：' + raw : '') }); setTimeout(() => finish(1), 0); return null; };
       const py = found.python, script = path.join(__dirname, 'mineru-pages.py'), firstModels = models === false; // 模型没下：第一篇开头 MinerU 会先下模型
-      if (found.problem === 'old') return fail(`电脑上的 MinerU 是 ${found.version}，太旧了，要 4.0 以上。打开「AI学术环境配置 → 大家共用的 → MinerU」看怎么升级，升级完点「重新检测」，再点「重试」。`);
-      if (!usable()) return fail('这台电脑上没找到 MinerU。打开「AI学术环境配置 → 大家共用的 → MinerU」看怎么装，装好点「重新检测」，再点「重试」。');
+      if (found.problem === 'old') return fail(`电脑上的 MinerU 是 ${found.version}，太旧了，要 4.0 以上。打开「${CFG} → 大家共用的 → MinerU」看怎么升级，升级完点「重新检测」，再点「重试」。`);
+      if (!usable()) return fail(`这台电脑上没找到 MinerU。打开「${CFG} → 大家共用的 → MinerU」看怎么装，装好点「重新检测」，再点「重试」。`);
       const files = [...new Set((job.files || []).map(String))].filter(isPdf);
       const t0 = Date.now(), result = { ok: [], skipped: [], failed: [] };
       let total = 0; // 真要转的篇数（挑完才知道）

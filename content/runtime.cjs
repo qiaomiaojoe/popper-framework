@@ -24,6 +24,7 @@ const { createTodos } = require('./todos.cjs');
 const { createRemote } = require('./remote.cjs');
 const { NAMING, hasNaming } = require('./naming.cjs');
 const common = require('./engine-common.cjs');
+const { APP, CFG, AGENT } = require('./app-name.cjs');
 
 const readJSON = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
 const writeJSON = (file, data) => { const tmp = file + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(data, null, 2)); fs.renameSync(tmp, file); };
@@ -55,7 +56,7 @@ const writeMark = (dir, data) => fs.writeFileSync(path.join(dir, LIB_MARK), JSON
 // 「我的 skills 库」的地址：学员自己的 GitHub 仓库（用户名/仓库名，或仓库网址），或者一个能直接下载的压缩包网址（比如阿里云 OSS 上公开读的 .zip / .tar.gz）
 function parseSkillsSource(raw) {
   const s = String(raw || '').trim();
-  if (!s) throw Error('还没设置「我的 skills 库」的地址：在 AI学术环境配置里点「设置地址」');
+  if (!s) throw Error(`还没设置「我的 skills 库」的地址：在「${CFG}」里点「设置地址」`);
   const gh = s.match(/^(?:https?:\/\/github\.com\/)?([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:\/tree\/([\w./-]+))?\/?$/);
   if (gh && !/^https?:/.test(s) || gh && /github\.com/.test(s)) return { kind: 'github', label: `GitHub ${gh[1]}/${gh[2]}`, url: `https://codeload.github.com/${gh[1]}/${gh[2]}/zip/${gh[3] || 'HEAD'}`, ext: '.zip', page: `https://github.com/${gh[1]}/${gh[2]}` };
   const u = (() => { try { return new URL(s); } catch { return null; } })();
@@ -276,7 +277,7 @@ function skillLine(name, what, filled) {
     // 这个项目用的 AI 装着的 skill（T2/T3）：造工作流时核对学员点名的 skill 装没装、名字对不对
     const eng = engineOf(p), skills = skillCatalog(p.path).map(x => ({ 名称: x.name, 用途: x.purpose, 来源: x.group, 装在这个项目的AI里: x.engines.includes(eng), 说明: String(x.desc || '').replace(/\s+/g, ' ').slice(0, 160) }));
     fs.writeFileSync(path.join(dir, '已装工具.json'), JSON.stringify({
-      说明: 'POPPER 里现在装着的工具（内置的 + 我的工具），和这台电脑上装着的 skill，执行「造工作流」时由 POPPER 写出来。指令是模板：{{键}} 换成输入框的值；{{#键}}…{{/键}} 填了才要；{{^键}}…{{/键}} 没填才要；{{#键=值}}…{{/键=值}} 选了这个值才要；{{日期}} 是今天。值先去掉首尾空格；「选择」没选或选了不在选项里的，用第一个选项。产出：这个工具做完会写出的主文件（相对项目文件夹；不带扩展名的表示同一文件夹里以它开头的文件），空着的表示工具自己不定。已装的skill：「装在这个项目的AI里」是 false 的，这个项目跑不了，要提醒我。换skill：每一步「这一步用哪个 skill」下拉框的代码，原样抄进网页。',
+      说明: APP + ' 里现在装着的工具（内置的 + 我的工具），和这台电脑上装着的 skill，执行「造工作流」时由 ' + APP + ' 写出来。指令是模板：{{键}} 换成输入框的值；{{#键}}…{{/键}} 填了才要；{{^键}}…{{/键}} 没填才要；{{#键=值}}…{{/键=值}} 选了这个值才要；{{日期}} 是今天。值先去掉首尾空格；「选择」没选或选了不在选项里的，用第一个选项。产出：这个工具做完会写出的主文件（相对项目文件夹；不带扩展名的表示同一文件夹里以它开头的文件），空着的表示工具自己不定。已装的skill：「装在这个项目的AI里」是 false 的，这个项目跑不了，要提醒我。换skill：每一步「这一步用哪个 skill」下拉框的代码，原样抄进网页。',
       填模板: FILL_JS, 换skill: SKILL_PICK_JS, 工具: list, 已装的skill: skills }, null, 1));
   }
   // 产出放哪：按项目说明里的「文件放哪」表（旧的写论文项目是 01_…06_ 那套）；项目说明里没有，就把默认表附在指令里（见 naming.cjs）
@@ -417,7 +418,7 @@ function skillLine(name, what, filled) {
     if (!w) return { status: 404, html: '<meta charset="utf-8"><p style="font:15px sans-serif;padding:30px">没有这个工作流（可能已被移除）。</p>' };
     const html = fs.readFileSync(w.file, 'utf8');
     const ctx = {
-      project: projectInfo(project), parentOrigin: k.mainOrigin, texts: w.texts, agentName: settings.agentName || 'Research Agent',
+      project: projectInfo(project), parentOrigin: k.mainOrigin, texts: w.texts, agentName: settings.agentName || AGENT,
       workflow: { id: w.id, name: w.name, version: w.version },
       // 「一键跑完」每段能选哪些 AI（内容 1.3.0）：只给启用了、找到了的名字；engine = 这个项目用的
       engines: usableEngines().map(id => ({ id, name: ENGINES[id].name })), engine: (p => p && p.exists ? engineOf(p) : settings.engine)(project && projects.get(project))
@@ -461,7 +462,7 @@ ${placeNote(p)}
 ${inventory(p)}
 需要的材料请自己在项目里找（看文件名，必要时打开看内容）；找不到就停下来问我，不要编造。
 完成后，列出这次新建或修改的全部文件。
-我让你把事情加进 POPPER 的待办时：在项目文件夹的 .工作站/ 里写一个 待办草稿-<随便起个后缀>.json，格式 {"todos":[{"title":"动词开头的一句话","prompt":"开始这件事时交给 AI 的指令","files":["相关文件的完整路径"]}]}，POPPER 会自动收进待办；不要去写 POPPER 数据文件夹里的 待办.json（写不了）。没让你加就不写。
+我让你把事情加进 ${APP} 的待办时：在项目文件夹的 .工作站/ 里写一个 待办草稿-<随便起个后缀>.json，格式 {"todos":[{"title":"动词开头的一句话","prompt":"开始这件事时交给 AI 的指令","files":["相关文件的完整路径"]}]}，${APP} 会自动收进待办；不要去写 ${APP} 数据文件夹里的 待办.json（写不了）。没让你加就不写。
 
 ${w ? `【以下是${w.kind === '工具' ? '工具' : '工作流'}「${w.name}」${w.version ? '（v' + w.version + '）' : ''}给出的指令】` : '【以下是我的指令】'}
 ${text}`;
@@ -482,28 +483,8 @@ ${text}`;
   const mentioned = (names, text) => names.filter(n => new RegExp(`(^|[^\\w-])${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w-])`).test(text));
 
   // ---------- 收件箱梳理 ----------
-  // 梳理时能建议的后续动作。10-23 乔淼：去掉「文献验真」；「PDF 入库」不再用 lit-pdf-zotero（那是给文献清单找 PDF 用的），
-  // 改成直接用 Zotero 服务把这几个 PDF 入库：一个项目一个任务，分类名就是项目名，留在收件箱的进「收件箱」分类
-  const FOLLOW_TOOLS = { pdfzotero: 'PDF 入库' };
-  const ZOTERO_DOC = /\.(pdf|epub)$/i;
-  const INBOX_COLLECTION = '收件箱';
-  // Zotero 服务（zotero-mcp）本地模式只能读：入库、建分类要配 Zotero 网页版的 key 和用户 ID（混合模式），否则直接报「local-only mode」
-  const zoteroCanWrite = e => typeof e.mcpEnvKeys === 'function' && ['ZOTERO_API_KEY', 'ZOTERO_LIBRARY_ID'].every(k => e.mcpEnvKeys('zotero').includes(k));
-  // 工具名按 zotero-mcp 新版（0.15 起）写，括号里是旧版（0.3）的名字。旧版传 PDF 附件有毛病：把完整路径当文件名发给 zotero.org 被拒，
-  // 却回报「File attached」（10-23 乔淼实测：条目进了、PDF 没有）——所以入库后一定要查子条目里真有 PDF
-  const zoteroPrompt = (coll, files) => `请用 Zotero 服务（zotero 那个 MCP 的工具）把下面 ${files.length} 个文件入库到我的 Zotero，放进分类「${coll}」，每篇都要带上 PDF 附件。只做入库，不用 skill，项目里的文件一个都不改。工具名以新版为准，括号里是旧版的名字，哪个有用哪个。
-
-1. 用 zotero_search_collections 找名字正好是「${coll}」的分类；没有就用 zotero_create_collection 建一个顶层分类，不建子分类。有好几个同名的，用第一个，并告诉我。
-2. 每个文件先查重：按文件名里的作者、年份、标题关键词用 zotero_search_items 查。库里已经有这篇的，不重复入库，用 zotero_set_item_collections（旧版 zotero_manage_collections）把它加进这个分类，再看第 4 步它有没有 PDF。
-3. 库里没有的：zotero_add_item，source 填下面的完整路径、collections 填这个分类的 key（旧版用 zotero_add_from_file，file_path 填完整路径）。它会自己从 PDF 里找 DOI、补全题录；没找到 DOI 的，读 PDF 第一页，用 zotero_update_item 补上标题、作者、年份、期刊或机构，条目类型改成合适的（期刊论文 journalArticle、工作论文 / 报告 report、书 book、书的章节 bookSection）。
-4. 核对附件：用 zotero_get_item_children 看每个条目下面是不是真有一个 PDF 附件——不要只信入库工具回的「File attached」。没有的，用 zotero_attach_file（item_key 填条目 key，file_path 填完整路径）补传，再查一次。还是没有、或者没有补传的工具，就在结果里写「PDF 没传上」和原因（旧版 zotero-mcp 传不了附件，要升级：uv tool upgrade zotero-mcp-server）。
-5. 不移动、不改名、不删除这些文件；Zotero 里别的条目和分类不要动。
-6. Zotero 服务用不了就停下来，原样告诉我报错，不要换别的办法硬做。报「local-only mode」「Cannot perform write operations」「no writable backend」的，说明 Zotero 服务现在只能读：请我到 POPPER 的「AI学术环境配置 → Zotero」里点「让 … 能入库」。
-
-文件：
-${files.map(f => '- ' + f).join('\n')}
-
-最后列一个表：文件 | 结果（新入库 / 已在库里、加进分类 / 没成功和原因）| PDF 附件（有 / 没传上）| Zotero 里的标题 | DOI。`;
+  // 梳理时能建议的后续动作：框架里没有（POPPER 的「PDF 入库」要 Zotero 服务，框架不带文献工具）。计划里 follow 恒为空，界面上就不出勾选框
+  const NO_FOLLOW = {};
   const TRIAGE_FOLDERS = ['选题/', '文献/', '文献/PDF/', '方法/', '数据/', '写作/', 'skill源材料/'];
   const inboxDirOf = () => { const ib = projects.inbox(); if (!ib || !ib.exists) throw Object.assign(Error('收件箱找不到了'), { status: 404 }); return ib; };
   const planFile = ib => path.join(ib.path, '.工作站', '梳理计划.json');
@@ -601,7 +582,9 @@ ${news.map(n => '- ' + n).join('\n') || '（没有新文件）'}
 ${kept.length ? `【上次留在收件箱的】（也要梳理：现在可能有合适的项目了；还是看不出就继续 keep；放了很久、看起来不会再用的，可以建议 archive 或 trash，见下面）
 ${kept.map(n => { let d = 0; try { d = Math.floor((Date.now() - fs.statSync(path.join(ib.path, n)).ctimeMs) / 864e5); } catch {} return `- ${n}${d >= 1 ? `（在收件箱里约 ${d} 天）` : ''}`; }).join('\n')}
 ` : ''}
-【我的项目】
+${body.note ? `【我先说一句】（照这个梳理）
+${String(body.note).slice(0, 4000)}
+` : ''}【我的项目】
 ${others.map(projectBrief).join('\n') || '- （还没有别的项目）'}
 
 【每个项目里文件放哪】
@@ -609,35 +592,32 @@ ${NAMING}
 【每个文件要做的】打开看内容（PDF 读前一两页，表格看表头，文稿看开头），判断它是什么、属于哪个项目、放进哪个文件夹。看不出属于哪个项目就留在收件箱；明显是一个新课题、又不属于现有项目的，可以建议新建项目。
 【不用了的】不会再用的文件有两种去处（都要我点「照这样做」才动，也能撤销）：archive = 归档到收件箱的「${ARCHIVE}/」文件夹，以后梳理不再看（适合留了很久、和现有项目都无关、但删了可惜的）；trash = 移进废纸篓（只给明显没用的：重复的、临时文件、安装包、已经在别处有一份的）。拿不准就 keep，不要为了清空收件箱硬归档。
 文件夹：论文项目按上面的「文件放哪」表，只能用 ${TRIAGE_FOLDERS.join(' ')}；别的项目用它现有的文件夹，最多两层——比如学员交付是每个学员一个文件夹，学员的稿子放「学员名/」，会议逐字稿放「学员名/会话记录/」（项目说明里有写，以它为准）；子文件夹还没有也可以写，工作站会建。
-【后续动作】只在确实适用时建议，只能从这几个里选：${Object.entries(FOLLOW_TOOLS).map(([k, v]) => `${k}（${v}）`).join('、')}。论文 PDF → pdfzotero（入 Zotero）；别的文件不要建议。
 【要做的事】从这些文件里看出我接下来要做的事，列成待办：比如学员发来新稿子 → 批注；会议逐字稿 → 整理成要点和待跟进；邮件 → 回复；文献 → 读。一件事一条，只列文件里确实看得出来的，不要编；什么都看不出来就是空的。每条要写清：在哪个项目里做、给 AI 的指令（具体做什么、按项目说明里的哪种做法、产出放哪；要我决定的地方写明让它停下问我）。我会在工作站里一条一条点「开始」，每条单独开一个对话。
 【写计划】写到 .工作站/梳理计划.json（已有就覆盖），只写这一个文件，格式：
-{"items":[{"file":"文件名（同上面列的）","kind":"文献清单 / 论文PDF / 稿件 / 数据 / 笔记 / 其他","project":"项目 id，或 new:新项目名，或 keep / archive / trash","folder":"文献/PDF/","reason":"一句话理由","follow":["pdfzotero"]}],
+{"items":[{"file":"文件名（同上面列的）","kind":"文献清单 / 论文PDF / 稿件 / 数据 / 笔记 / 其他","project":"项目 id，或 new:新项目名，或 keep / archive / trash","folder":"文献/PDF/","reason":"一句话理由"}],
  "todos":[{"title":"动词开头的一句话，比如「批注 Kaylynn 的 proposal 第 3 版」","project":"项目 id","files":["相关的文件名（同上面列的）"],"prompt":"交给 AI 的指令"}]}
-上面列的每个文件（新文件和上次留下的）都写一条，不要漏；keep / archive / trash 的 folder 留空、不写 follow；列了但在收件箱里找不到的（可能刚被挪走了），计划里不写它、也不用停下来问我，最后提一句就行；收件箱里没有 AGENTS.md 是正常的，不用提；keep 的 folder 留空；不确定就 keep，在 reason 里说为什么。todos 里的文件写收件箱里的文件名就行，工作站开始这件事时会换成搬过去以后的位置。
-最后用两三句话告诉我：几个文件建议去哪、有哪些后续动作、梳理出几件要做的事，提醒我在工作站里看「梳理计划」、点「照这样做」，再一件件点「开始」。`;
+上面列的每个文件（新文件和上次留下的）都写一条，不要漏；keep / archive / trash 的 folder 留空；列了但在收件箱里找不到的（可能刚被挪走了），计划里不写它、也不用停下来问我，最后提一句就行；收件箱里没有 AGENTS.md 是正常的，不用提；keep 的 folder 留空；不确定就 keep，在 reason 里说为什么。todos 里的文件写收件箱里的文件名就行，工作站开始这件事时会换成搬过去以后的位置。
+最后用两三句话告诉我：几个文件建议去哪、梳理出几件要做的事，提醒我在 Dashboard 的收件箱里看计划、点「照这样做」，再一件件点「开始」。`;
       return createRun({ project: ib.id, prompt, free: true, title: '梳理收件箱' }).data;
     }
     if (sub === 'plan' && method === 'GET') {
       let plan = null; try { plan = JSON.parse(fs.readFileSync(planFile(ib), 'utf8')); } catch {}
       const ps = projects.list().filter(p => !p.inbox && p.exists).map(p => ({ id: p.id, name: p.name, folders: projectFolders(p) }));
-      if (!plan || !Array.isArray(plan.items)) return { plan: null, projects: ps, folders: TRIAGE_FOLDERS, follow: FOLLOW_TOOLS, canUndo: readJSON(undoFile(ib), []).length > 0 };
+      if (!plan || !Array.isArray(plan.items)) return { plan: null, projects: ps, folders: TRIAGE_FOLDERS, follow: NO_FOLLOW, canUndo: readJSON(undoFile(ib), []).length > 0 };
       let mtime = 0; try { mtime = fs.statSync(planFile(ib)).mtimeMs; } catch {}
       const items = plan.items.filter(x => x && x.file).slice(0, 200).map(x => {
         const file = String(x.file).replace(/^\/+/, '');
-        return { file, exists: fs.existsSync(path.join(ib.path, file)), kind: String(x.kind || ''), project: String(x.project || 'keep'), folder: String(x.folder || ''), reason: String(x.reason || ''), follow: [].concat(x.follow || []).map(String).filter(k => FOLLOW_TOOLS[k] && ZOTERO_DOC.test(file)) };
+        return { file, exists: fs.existsSync(path.join(ib.path, file)), kind: String(x.kind || ''), project: String(x.project || 'keep'), folder: String(x.folder || ''), reason: String(x.reason || ''), follow: [] };
       });
       const names = new Map([[ib.id, '收件箱'], ...ps.map(p => [p.id, p.name])]);
       const todos = (Array.isArray(plan.todos) ? plan.todos : []).filter(t => t && (t.title || t.prompt)).slice(0, 50).map(t => ({ title: String(t.title || '').slice(0, 80), project: names.has(String(t.project)) ? String(t.project) : ib.id,
         projectName: names.get(String(t.project)) || '收件箱', files: [].concat(t.files || []).map(String).slice(0, 20), prompt: String(t.prompt || '').slice(0, 4000), run: t.run || '' }));
-      return { plan: { items, todos, applied: !!plan.applied, at: mtime }, projects: ps, folders: TRIAGE_FOLDERS, follow: FOLLOW_TOOLS, canUndo: readJSON(undoFile(ib), []).length > 0 };
+      return { plan: { items, todos, applied: !!plan.applied, at: mtime }, projects: ps, folders: TRIAGE_FOLDERS, follow: NO_FOLLOW, canUndo: readJSON(undoFile(ib), []).length > 0 };
     }
     if (sub === 'apply' && method === 'POST') {
       const items = Array.isArray(body.items) ? body.items.slice(0, 200) : [];
       const prev = projects.current()?.id, moves = [], kept = [], queued = [], errors = [], archived = [], trashed = [], undoable = [];
       const made = new Map(); // 新项目名 → 项目
-      const zjobs = new Map(); // 项目 id → 这个项目要入 Zotero 的文件（一个项目一个任务）
-      const addZ = (pid, coll, f) => { const j = zjobs.get(pid) || { pid, coll, files: [] }; j.files.push(f); zjobs.set(pid, j); };
       const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       for (const x of items) {
         try {
@@ -645,8 +625,7 @@ ${NAMING}
           if (file.includes('/')) throw Error(`只梳理收件箱顶层的东西：${file}`);
           const src = path.join(ib.path, file);
           if (!fs.existsSync(src)) throw Error(`找不到 ${file}`);
-          const wantZ = [].concat(x.follow || []).map(String).includes('pdfzotero') && ZOTERO_DOC.test(file);
-          if (!x.project || x.project === 'keep') { kept.push(file); if (wantZ) addZ(ib.id, INBOX_COLLECTION, src); continue; }
+          if (!x.project || x.project === 'keep') { kept.push(file); continue; }
           // 不用了（内容 1.3.10）：归档到 收件箱/已归档/（以后不再梳理），或移进废纸篓；都记进梳理记录，「撤销上次梳理」能放回来（Windows 回收站的除外）
           if (x.project === 'archive') {
             const dir = path.join(ib.path, ARCHIVE); fs.mkdirSync(dir, { recursive: true });
@@ -679,17 +658,7 @@ ${NAMING}
             fs.renameSync(src, path.join(keep, Date.now() + '-' + file));
           }
           moves.push({ from: src, to: dst, project: p.id, projectName: p.name, rel: folder + name });
-          if (wantZ) addZ(p.id, p.name, dst);
         } catch (e) { errors.push(e.message); }
-      }
-      for (const j of zjobs.values()) {
-        const p = projects.get(j.pid), engineId = p && engineOf(p), e = ENGINES[engineId];
-        if (!isFake(engineId) && !zoteroCanWrite(e)) { // 假 AI 不查（开发时测这条链路）
-          errors.push(`PDF 入库（${j.files.length} 个）没排上：${e.name} 的 Zotero 服务${typeof e.hasMcp === 'function' && e.hasMcp('zotero') ? '现在只能读、不能入库' : '还没配'}，到「AI学术环境配置 → Zotero」里设好再来`);
-          continue;
-        }
-        const r = createRun({ project: j.pid, prompt: zoteroPrompt(j.coll, j.files), free: true, title: `PDF 入库 Zotero · ${j.coll}（${j.files.length} 个）` });
-        if (r.status >= 400) errors.push(`PDF 入库（${j.coll}）没排上：${r.data.error}`); else queued.push(`${j.coll} · PDF 入库 ${j.files.length} 个`);
       }
       if (kept.length) projects.markSeen(kept);
       if (moves.length || undoable.length) { const log = readJSON(undoFile(ib), []); log.push({ at: new Date().toISOString(), moves: [...moves.map(m => ({ from: m.from, to: m.to })), ...undoable] }); writeJSON(undoFile(ib), log.slice(-20)); }
@@ -807,7 +776,7 @@ ${NAMING}
       const twin = liveTwin(p.id, r => r.workflow === w.id && (r.auto || steps.some(x => x.title === r.title)));
       if (twin) return busyErr(twin);
       for (const x of steps) {
-        if (!ENGINES[x.engine] || !isOn(x.engine)) return err(400, `「${x.title}」指定的 AI（${ENGINES[x.engine]?.name || x.engine}）没有启用：先在「AI学术环境配置」里启用它，或者换一个`);
+        if (!ENGINES[x.engine] || !isOn(x.engine)) return err(400, `「${x.title}」指定的 AI（${ENGINES[x.engine]?.name || x.engine}）没有启用：先在「${CFG}」里启用它，或者换一个`);
         if (!found[x.engine] || !found[x.engine].bin) return err(409, `「${x.title}」指定的 ${ENGINES[x.engine].name} 在这台电脑上没找到：${found[x.engine]?.info.missingHint || ''}`);
         x.model = modelFor(x.engine);
       }
@@ -833,11 +802,11 @@ ${NAMING}
         for (const f of list) { try { inProject(p.id, f); } catch (e) { return err(400, e.message); } }
         if (mineru.checking()) return err(409, '正在检测电脑上的 MinerU，过几秒再点一次');
         const ms = mineru.status();
-        if (ms.problem === 'old') return err(409, `电脑上的 MinerU 是 ${ms.version}，太旧了（要 4.0 以上）：打开「AI学术环境配置」看怎么升级`);
-        if (!mineru.usable()) return err(409, '这台电脑上没找到能用的 MinerU：打开「AI学术环境配置」看怎么装');
+        if (ms.problem === 'old') return err(409, `电脑上的 MinerU 是 ${ms.version}，太旧了（要 4.0 以上）：打开「${CFG}」看怎么升级`);
+        if (!mineru.usable()) return err(409, `这台电脑上没找到能用的 MinerU：打开「${CFG}」看怎么装`);
         try {
           const run = tasks.create({ project: p.id, title: `MinerU · 转 ${list.length} 篇 PDF`, tool: t.id, toolVersion: t.version, local: { kind: 'mineru', files: list, tier: mineru.tier() },
-            prompt: `MinerU 把这些 PDF 转成带页码的文字稿，放 文献/全文/（POPPER 在电脑上自己转，不经过 AI）：\n${list.map(f => '- ' + f).join('\n')}` });
+            prompt: `MinerU 把这些 PDF 转成带页码的文字稿，放 文献/全文/（${APP} 在电脑上自己转，不经过 AI）：\n${list.map(f => '- ' + f).join('\n')}` });
           return { status: 201, data: tasks.pub(run) };
         } catch (e) { return err(e.status || 400, e.message); }
       }
@@ -872,23 +841,7 @@ ${NAMING}
     } catch (e) { return err(e.status || 400, e.message, e.riskAck && { riskAck: e.riskAck }); }
   }
 
-  // ---------- 设置里的 Zotero 检查：程序开着没、本地 API 开了没、两个 AI 程序里配没配 zotero 服务 ----------
-  // Zotero（7 起）的本地接口在 127.0.0.1:23119：/connector/ping 只要开着就通；/api/ 要在 Zotero 设置里勾上「允许此计算机上的其他应用程序与 Zotero 通信」
-  async function zoteroCheck() {
-    const get = async url => { try { const r = await fetch(url, { signal: AbortSignal.timeout(1500) }); return r.status; } catch { return 0; } };
-    const ping = await get('http://127.0.0.1:23119/connector/ping');
-    const apiStatus = ping ? await get('http://127.0.0.1:23119/api/users/0/items?limit=1') : 0;
-    return { running: ping === 200, api: apiStatus === 200,
-      engines: Object.keys(BASE_ENGINES).map(id => ({ id, name: BASE_ENGINES[id].name, ok: typeof BASE_ENGINES[id].hasMcp === 'function' && BASE_ENGINES[id].hasMcp('zotero') })) };
-  }
-
-  // ---------- AI学术环境配置（10-14 试用反馈第 11 条）：课程 skills、文献工具、Zotero、pandoc 装没装；没装的「交给 AI 安装」，在收件箱里跑 ----------
-  const REPO_SKILLS = ['academic-project-init', 'analyze-qualitative-data', 'analyze-quantitative-data', 'article-framework', 'critical-paper-reading', 'data-analysis-round',
-    'findings-synthesis', 'fulltext-draft', 'knowledge-module-gen', 'knowledge-module-list', 'lit-pdf-zotero', 'lit-pyramid', 'lit-verify', 'literature-analysis', 'literature-search',
-    'methodology-draft', 'methods-map', 'model-paper-deconstruct', 'pxyv-search', 'research-design', 'research-gap-scan', 'review-blueprint', 'review-draft', 'review-draft-assembly',
-    'review-synthesis', 'skill-forge', 'skill-workshop-plan', 'sr-search-record', 'topic-concept-construction', 'topic-hypothesis-testing', 'topic-method-driven', 'topic-pxyv-parse',
-    'topic-review-integrative', 'topic-review-semisystematic', 'topic-review-systematic', 'topic-theory-interpretation', 'topic-workbench',
-    'submission-task-intake', 'manuscript-diagnosis', 'manuscript-revision', 'journal-requirements-check', 'submission-package-preparation', 'review-response-planning', 'review-revision-response'];
+  // ---------- 配置页（10-14 试用反馈第 11 条）：我的 skills 库装没装；装不上时给「复制安装指令」 ----------
   // 「安装」一次只装进一个 AI 程序（乔淼 10-21：缺哪边点哪边，分两次装）：POPPER 只放行这个 AI 写自己的 skills 文件夹，
   // 交给 AI 之前先把文件夹建好（新电脑上多半还没有，没有就不放行）。装不进去时，任务卡片上能复制指令，拿到客户端里手动装
   // skills 装到哪、客户端怎么打开、MCP 服务配在哪：都在各 AI 程序自己的文件里（engine-*.cjs，内容 1.2.0 起）
@@ -903,47 +856,12 @@ ${NAMING}
 2. 逐个放进 ${dir}（没有就先建好）。只装这一个文件夹，别的 AI 程序的 skills 文件夹不要动。
 3. 同名 skill 已存在时用新版覆盖，覆盖前先把旧的整个文件夹备份到当前文件夹下的 .工作站/skills备份/<今天日期>/ 里。
 4. 装完删掉临时文件夹，列出装好的 skill 数量、备份了哪些。`; } },
-    search: { title: '安装文献数据库检索 skills', skills: true, text: (dir, e) => `请把下面 4 个 skills 仓库安装到我的电脑上：读取每个仓库（没有 git 就下载 zip 包），把其中的每个 skill（含 SKILL.md 的文件夹）逐个放进 ${dir}（没有就先建好；只装这一个文件夹）；同名已存在先停下问我覆盖还是跳过。
-
-https://github.com/cookjohn/gs-skills
-https://github.com/cookjohn/sd-skills
-https://github.com/cookjohn/wos-skills
-https://github.com/cookjohn/cnki-skills
-
-这些 skill 要用 Chrome DevTools MCP 操作浏览器：检查你自己（这个 AI 程序）有没有配 chrome-devtools 服务，没有就告诉我怎么配（给出命令，不要替我改 AI 程序的设置）。装完列出装好的 skill。` },
-    scansci: { title: '安装 scansci-pdf', skills: true, text: (dir, e) => `请帮我安装 https://github.com/Rimagination/scansci-pdf（学术论文 PDF 下载工具，MCP 服务）：
-
-1. 先检查电脑上有没有 Python 3.11 或更新版本；没有的话告诉我怎么装（Windows 可以用 winget install Python.Python.3.12，或从 python.org 下载；Mac 可以用 brew install python），装好再继续。然后读它的 README，按说明装好程序本身（推荐 pip install "scansci-pdf[cloakbrowser,vpnsci]"）。
-2. 把它配进你自己（${e.name}）的 MCP 设置，服务名叫 scansci-pdf：${e.mcpConfig}。命令先写给我看，我同意了再改设置。
-3. 仓库里如果带 skill，放进 ${dir}（没有就先建好）。
-4. 装完告诉我怎么验证它能用。` },
-    // Zotero 服务（10-21 补按钮）：和 scansci-pdf 一样要装程序、改 AI 程序的设置，交给 AI，改设置前先给学员看命令。
-    // 服务名必须叫 zotero：POPPER 按这个名字检测，Codex 也按这个名字临时放行 Zotero 工具
-    zotero: { title: '安装 Zotero 服务', skills: false, text: (dir, e) => `请帮我给你自己（这个 AI 程序）配好 Zotero 服务（zotero-mcp，本地模式），让你能检索和读写我电脑上 Zotero 里的文献：
-
-1. 按 https://github.com/54yyyu/zotero-mcp 的 README 装好 zotero-mcp 程序本身（推荐用 uv：uv tool install zotero-mcp-server；没有 uv 就按 README 里的其他方式）。已经装过就跳过。
-2. 用本地模式把它配进你自己（${e.name}）的 MCP 设置，服务名必须叫 zotero：${e.mcpConfig}；command 写 zotero-mcp 程序的完整路径，环境变量 ZOTERO_LOCAL = true。命令或要加的内容先写给我看，我同意了再改设置。
-3. 提醒我：打开 Zotero（最新版），在 Zotero 的设置里勾上「允许此计算机上的其他应用程序与 Zotero 通信」。
-4. 装完告诉我怎么验证它能用（重开 POPPER 的「AI学术环境配置」，Zotero 服务那一格变成已就绪）。` },
-    // 让 Zotero 服务能入库（10-23）：zotero-mcp 本地模式只能读，写入要 Zotero 网页版的 key + 用户 ID（混合模式：读本机，写到 zotero.org 再同步回来）
-    zoteroWrite: { title: '让 Zotero 服务能入库', skills: false, text: (dir, e) => `请帮我把你自己（这个 AI 程序）的 Zotero 服务（服务名 zotero，程序是 zotero-mcp）设成能入库。它现在是本地模式，只能读、不能写；要加上 Zotero 网页版的 key 和用户 ID（混合模式：读还是读我电脑上的 Zotero，新条目写到 zotero.org 再同步回电脑）。
-
-0. 先把 zotero-mcp 升到最新：它是用 uv 装的就运行 uv tool upgrade zotero-mcp-server（不是 uv 装的按 https://github.com/54yyyu/zotero-mcp 的 README 升级）。旧版（0.3 以前）入库时 PDF 附件传不上去，还会说已经传好了。
-1. 再让我做：打开 https://www.zotero.org/settings/keys 登录 → 页面上「Your user ID for use in API calls is ……」那串数字是用户 ID → 点「Create new private key」，勾上「Allow library access」和「Allow write access」，保存，复制生成的 key → 把用户 ID 和 key 发给你。
-2. 给 zotero 服务的环境变量加上 ZOTERO_API_KEY（key）、ZOTERO_LIBRARY_ID（用户 ID）、ZOTERO_LIBRARY_TYPE = user；原来的 ZOTERO_LOCAL = true 留着，别的不动。你（${e.name}）的 MCP 设置：${e.mcpConfig}。要改的内容先写给我看（key 用 *** 代替），我同意了再改。
-3. 提醒我：Zotero 里要登录同一个账号、开着同步（Zotero 设置 → 同步），新入库的文献才会出现在电脑上；PDF 附件会传到 Zotero 云存储（免费 300MB），存满了条目照样能入库，但附件传不上去。
-4. 改完告诉我：回到 POPPER 的「AI学术环境配置」点「重新检测」，「能入库」那一格变成就绪。` },
-    pandoc: { title: '安装 pandoc', skills: false, text: (dir, e) => `请帮我安装 pandoc（把 Markdown 转成 Word 用）：Mac 有 Homebrew 就用 brew install pandoc；Windows 用 winget install --id JohnMacFarlane.Pandoc；都没有就告诉我去 https://pandoc.org/installing.html 下载安装包，不要用别的来源。装完运行 pandoc --version 确认。` }
   };
-  const installText = (what, engineId, client) => { const e = ENGINES[engineId] && ENGINES[engineId].skillsHome ? ENGINES[engineId] : ENGINES.claude; return INSTALL[what].text(e.skillsHomeLabel, e) + (client ? '' : STUCK(e)); };
+  const installText = (what, engineId) => { const e = ENGINES[engineId] && ENGINES[engineId].skillsHome ? ENGINES[engineId] : ENGINES.claude; return INSTALL[what].text(e.skillsHomeLabel, e) + STUCK(e); };
 
-  // ---------- 课程 skills、数据库检索 skills：POPPER 自己装，不经过 AI（乔淼 10-21：Windows 上 AI 装不了——没有 git、
-  // 旧版 PowerShell 下载 GitHub 断连、清理命令被拦）。下载 GitHub 压缩包 → 系统自带 tar 解压（Mac、Windows 10 起都有）→
+  // ---------- 我的 skills 库：自己装，不经过 AI（乔淼 10-21：Windows 上 AI 装不了——没有 git、
+  // 旧版 PowerShell 下载 GitHub 断连、清理命令被拦）。下载压缩包 → 系统自带 tar 解压（Mac、Windows 10 起都有）→
   // 找出含 SKILL.md 的文件夹 → 同名的先备份到收件箱 .工作站/skills备份/<日期>/<AI 程序>/ → 复制进这个 AI 程序的 skills 文件夹 ----------
-  // 要装程序、改 AI 程序设置的几项（10-21 Windows 实测：POPPER 里的 AI 在沙箱里装不了，没有 Python/git、写不了 ~/.codex/config.toml）：
-  // 不在 POPPER 里开任务，界面上给指令，学员在 Claude Code / Codex 客户端里装（客户端会弹窗请学员同意）
-  const CLIENT_ONLY = ['scansci', 'zotero', 'zoteroWrite', 'pandoc'];
-  const SKILL_REPOS = { search: ['cookjohn/gs-skills', 'cookjohn/sd-skills', 'cookjohn/wos-skills', 'cookjohn/cnki-skills'] };
   const tarBin = () => {
     if (!common.WIN) return 'tar';
     const sys = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'); // 用 Windows 自带的 bsdtar，不用 Git 带的 GNU tar（解不了 zip）
@@ -967,8 +885,8 @@ https://github.com/cookjohn/cnki-skills
   const gh = createGhSkills({ dataDir, engines: ghEngines, courseSkills: { has: n => COURSE_SKILLS.has(n) || /^topic-/.test(n) }, extract, trash,
     backupDir: engineId => { const inbox = projects.list().find(x => x.inbox); return path.join(inbox ? inbox.path : dataDir, '.工作站', 'skills备份', new Date().toISOString().slice(0, 10), engineId); },
     tools: { list: listTools, save: t => saveUserTool(t, ''), remove: removeUserTool } });
-  // 「我的 skills 库」（what = 'course'）：从学员自己设置的地址下载（GitHub 仓库或压缩包网址），不验签名；数据库检索 skills 照旧从 GitHub 拉
-  async function installSkills(what, engineId) {
+  // 「我的 skills 库」：从学员自己设置的地址下载（GitHub 仓库或压缩包网址），不验签名
+  async function installSkills(engineId) {
     const target = skillDirAbs(engineId);
     const inbox = projects.list().find(x => x.inbox);
     const day = new Date().toISOString().slice(0, 10);
@@ -978,7 +896,7 @@ https://github.com/cookjohn/cnki-skills
     try {
       fs.mkdirSync(target, { recursive: true });
       const pkgs = []; // [名字, 解开后的文件夹]
-      if (what === 'course') try {
+      try {
         const src = parseSkillsSource(settings.skillsSource);
         const r = await fetch(src.url, { signal: AbortSignal.timeout(120000), headers: { 'User-Agent': 'POPPER-Framework' } });
         if (!r.ok) throw Error(`下载失败（${r.status}）${src.kind === 'github' ? '：仓库要是公开的' : '：文件要设成公开读'}`);
@@ -987,16 +905,6 @@ https://github.com/cookjohn/cnki-skills
         extract(file, path.join(tmp, 'mylib'));
         pkgs.push([src.label, path.join(tmp, 'mylib')]); result.from = src.label;
       } catch (e) { result.errors.push(e.name === 'TimeoutError' ? '下载超时' : e.message); }
-      for (const repo of what === 'course' ? [] : SKILL_REPOS[what]) {
-        try {
-          const r = await fetch(`https://codeload.github.com/${repo}/zip/HEAD`, { signal: AbortSignal.timeout(120000), headers: { 'User-Agent': 'POPPER' } });
-          if (!r.ok) throw Error(`下载失败（${r.status}）`);
-          const zip = path.join(tmp, repo.replace('/', '-') + '.zip');
-          fs.writeFileSync(zip, Buffer.from(await r.arrayBuffer()));
-          extract(zip, zip.slice(0, -4));
-          pkgs.push([repo, zip.slice(0, -4)]);
-        } catch (e) { result.errors.push(`${repo}：${e.name === 'TimeoutError' ? '下载超时' : e.message}`); }
-      }
       for (const [repo, dir] of pkgs) {
         try {
           const found = findSkillDirs(dir);
@@ -1008,12 +916,10 @@ https://github.com/cookjohn/cnki-skills
             result.installed.push(name);
           }
           // 我的 skills 库装好了：在 skills 文件夹里记下是哪一版（包里或仓库里的 version.json，没有就不写版本）
-          if (what === 'course') {
-            const vf = [path.join(dir, 'version.json'), ...fs.readdirSync(dir).map(d => path.join(dir, d, 'version.json'))].find(f => fs.existsSync(f));
-            let meta = {}; try { meta = vf ? JSON.parse(fs.readFileSync(vf, 'utf8')) : {}; } catch {}
-            writeMark(target, { version: meta.version || null, installedAt: new Date().toISOString(), skills: Array.isArray(meta.skills) ? meta.skills : found.map(f => path.basename(f)).sort(), from: result.from || '' });
-            result.version = meta.version || null;
-          }
+          const vf = [path.join(dir, 'version.json'), ...fs.readdirSync(dir).map(d => path.join(dir, d, 'version.json'))].find(f => fs.existsSync(f));
+          let meta = {}; try { meta = vf ? JSON.parse(fs.readFileSync(vf, 'utf8')) : {}; } catch {}
+          writeMark(target, { version: meta.version || null, installedAt: new Date().toISOString(), skills: Array.isArray(meta.skills) ? meta.skills : found.map(f => path.basename(f)).sort(), from: result.from || '' });
+          result.version = meta.version || null;
         } catch (e) { result.errors.push(`${repo}：${e.message}`); }
       }
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
@@ -1047,7 +953,7 @@ https://github.com/cookjohn/cnki-skills
   let roughdraftBin = findRoughdraft();
   // 配置里「怎么装」的弹窗（10-23 乔淼：学员不知道怎么装）。官方装法是 npm i -g roughdraft（roughdraft.md/setup.md），要先有 Node.js
   const ROUGHDRAFT_INSTALL = {
-    note: `Roughdraft 是一个免费、开源的 Markdown 批注工具，在浏览器里用。装好后，POPPER 里打开 md 文件，右上角多一个笔形按钮：点了在浏览器里批注，批完点「Approve」（改过字是「I'm done」），自动交给 AI 按批注改。它要用 Node.js：先在${common.WIN ? ' PowerShell ' : '终端'}里输入 node -v 回车，出来版本号就是有了；没有的话先装 Node.js（${common.WIN ? '在 PowerShell 里运行 winget install OpenJS.NodeJS.LTS' : '有 Homebrew 就运行 brew install node'}，或者去 nodejs.org 下载 LTS 版安装包），装完关掉${common.WIN ? ' PowerShell ' : '终端'}再开一个。`,
+    note: `Roughdraft 是一个免费、开源的 Markdown 批注工具，在浏览器里用。装好后，${APP} 里打开 md 文件，右上角多一个笔形按钮：点了在浏览器里批注，批完点「Approve」（改过字是「I'm done」），自动交给 AI 按批注改。它要用 Node.js：先在${common.WIN ? ' PowerShell ' : '终端'}里输入 node -v 回车，出来版本号就是有了；没有的话先装 Node.js（${common.WIN ? '在 PowerShell 里运行 winget install OpenJS.NodeJS.LTS' : '有 Homebrew 就运行 brew install node'}，或者去 nodejs.org 下载 LTS 版安装包），装完关掉${common.WIN ? ' PowerShell ' : '终端'}再开一个。`,
     shell: common.WIN ? 'PowerShell' : '终端',
     open: common.WIN ? '点开始菜单，搜「PowerShell」，打开它' : '按 ⌘ + 空格，搜「终端」，打开它',
     cmd: 'npm i -g roughdraft',
@@ -1090,25 +996,7 @@ https://github.com/cookjohn/cnki-skills
     return { watching: true };
   }
 
-  function findPandoc() {
-    const dirs = [...common.pathDirs(), '/opt/homebrew/bin', '/usr/local/bin', path.join(require('node:os').homedir(), '.local', 'bin')];
-    for (const d of dirs) for (const n of common.WIN ? ['pandoc.exe'] : ['pandoc']) if (fs.existsSync(path.join(d, n))) return path.join(d, n);
-    return '';
-  }
-  // OpenAlex（写综述文章的检索筛选用）：翻页要 API key。key 和邮箱写在 ~/.config/openalex/（权限 600），
-  // sr-search-record 的脚本自己从那里读——不经过指令、命令行和环境变量（Codex 会滤掉名字带 KEY 的环境变量）。
-  const OA_DIR = path.join(require('node:os').homedir(), '.config', 'openalex');
-  const oaRead = n => { try { return fs.readFileSync(path.join(OA_DIR, n), 'utf8').trim(); } catch { return ''; } };
-  function oaSave({ key, mailto }) {
-    key = String(key || '').trim(); mailto = String(mailto || '').trim();
-    if (key && !/^[A-Za-z0-9_-]{8,200}$/.test(key)) throw new Error('API key 的格式不对');
-    if (mailto && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailto)) throw new Error('邮箱格式不对');
-    fs.mkdirSync(OA_DIR, { recursive: true, mode: 0o700 });
-    // 空着的不改（不删用户的文件）
-    for (const [n, v] of [['api_key', key], ['mailto', mailto]]) if (v) { const f = path.join(OA_DIR, n); fs.writeFileSync(f, v + '\n', { mode: 0o600 }); fs.chmodSync(f, 0o600); }
-  }
   async function envCheck() {
-    const z = await zoteroCheck();
     const engines = Object.keys(BASE_ENGINES).map(id => {
       if (!isOn(id)) return { id, name: BASE_ENGINES[id].name, enabled: false, found: false }; // 没启用的不检查
       const e = BASE_ENGINES[id], f = found[id] || {}, info = f.info || {}, all = new Set(info.version ? allSkills(id, dataDir) : []);
@@ -1116,16 +1004,14 @@ https://github.com/cookjohn/cnki-skills
         model: info.model || (info.defaults || {}).model || '', effort: (info.defaults || {}).effort || '',
         // 我的 skills 库：按装的那一次记下的名单看缺哪些（没装过就是空的）
         course: (() => { const m = readMark(skillDirAbs(id)), list = m && Array.isArray(m.skills) ? m.skills : [];
-          return { installed: !!m, total: list.length, missing: list.filter(n => !all.has(n)), version: (m && m.version) || null }; })(),
-        search: { gs: all.has('gs-search'), sd: all.has('sd-search'), wos: all.has('wos-search'), cnki: all.has('cnki-search') },
-        scansci: typeof e.hasMcp === 'function' && e.hasMcp('scansci-pdf'), zotero: typeof e.hasMcp === 'function' && e.hasMcp('zotero'), zoteroWrite: zoteroCanWrite(e), enabled: true };
+          return { installed: !!m, total: list.length, missing: list.filter(n => !all.has(n)), version: (m && m.version) || null }; })(), enabled: true };
     });
     roughdraftBin = findRoughdraft(); // 装完回来点「重新检测」或重开配置就能找到，md 文件的笔形按钮跟着出来
     const mu = await mineru.recheck();
-    return { engines, skillsLatest: { source: settings.skillsSource || '' }, zotero: { running: z.running, api: z.api }, pandoc: findPandoc(), roughdraft: { path: roughdraftBin, install: ROUGHDRAFT_INSTALL }, mineru: mu, openalex: { key: !!oaRead('api_key'), mailto: oaRead('mailto') } };
+    return { engines, skillsLatest: { source: settings.skillsSource || '' }, roughdraft: { path: roughdraftBin, install: ROUGHDRAFT_INSTALL }, mineru: mu };
   }
-  // 配置指南：content/AI学术环境配置指南.md（内核不直接送 .md，经接口给界面）
-  const guideText = () => { try { return fs.readFileSync(path.join(contentDir, 'AI学术环境配置指南.md'), 'utf8'); } catch { return '# 配置指南\n\n（没找到指南文件）'; } };
+  // 配置指南：content/配置指南.md（内核不直接送 .md，经接口给界面）。里面写的「My App」换成这个 App 的名字
+  const guideText = () => { try { return fs.readFileSync(path.join(contentDir, '配置指南.md'), 'utf8').replaceAll('My App', APP); } catch { return '# 配置指南\n\n（没找到指南文件）'; } };
 
   const config = () => ({
     platform: k.platform, dev: !!k.dev, busy: tasks.isBusy(), engine: settings.engine,
@@ -1135,7 +1021,7 @@ https://github.com/cookjohn/cnki-skills
     projectsDir: defaultProjectsDir, langs: LANGS, mineru: mineru.usable(), // 装好了能用的 MinerU（首页「下一步」要不要提它）
     selfUse: false, // 项目类型（学员交付 / 公众号 / 备课）是乔淼自用的，框架里不出
     parallel: Number.isInteger(settings.parallel) ? settings.parallel : 3, // 同一个项目最多同时跑几个任务（内容 1.3.9）
-    writeDirs: settings.writeDirs, canQuit: typeof hooks.quit === 'function', agentName: settings.agentName || 'Research Agent', quota: quotaAll(), roughdraft: !!roughdraftBin,
+    writeDirs: settings.writeDirs, canQuit: typeof hooks.quit === 'function', agentName: settings.agentName || AGENT, quota: quotaAll(), roughdraft: !!roughdraftBin,
     pinnedTools: (settings.pinnedTools || []).filter(id => listTools().some(t => t.id === id))
   });
   const ok = data => ({ status: 200, data }), err = (status, error, extra) => ({ status, data: { error, ...(extra || {}) } });
@@ -1147,7 +1033,6 @@ https://github.com/cookjohn/cnki-skills
     // 看项目、看文件、看任务列表这些不等，免得某个程序卡住时整个界面都等
     if (detecting && (/^(runs$|runs\/|env|engine|model|recheck|skills|inbox\/(triage|apply)|todos\/(start|split)|files\/revise)/.test(route) && !(route === 'runs' && method === 'GET'))) await detecting;
     if (route === 'recheck' && method === 'POST') { roughdraftBin = findRoughdraft(); mineru.recheck(); await detectAll(); return ok(config()); }
-    if (route === 'zotero-check' && method === 'GET') return ok(await zoteroCheck());
     if (route === 'env' && method === 'GET') return ok(await envCheck());
     if (route === 'env/guide' && method === 'GET') return ok({ text: guideText() });
     // 空间占用（10-23）：点了才算（文件多时要几秒）；清理只移进废纸篓 / 回收站
@@ -1160,7 +1045,7 @@ https://github.com/cookjohn/cnki-skills
         if (!String(raw || '').trim()) continue;
         if (!fs.existsSync(d) || !fs.statSync(d).isDirectory()) return err(400, `没有这个文件夹：${raw}`);
         if (d === path.parse(d).root || d === home || home.startsWith(d + path.sep)) return err(400, '不能放开整个硬盘或整个个人文件夹，请选一个具体的文件夹');
-        if (d === dataDir || d.startsWith(dataDir + path.sep) || dataDir.startsWith(d + path.sep)) return err(400, '这个文件夹里有 POPPER 自己的数据，不能放开');
+        if (d === dataDir || d.startsWith(dataDir + path.sep) || dataDir.startsWith(d + path.sep)) return err(400, `这个文件夹里有 ${APP} 自己的数据，不能放开`);
         if (!out.includes(d)) out.push(d);
       }
       settings.writeDirs = out; save();
@@ -1171,7 +1056,6 @@ https://github.com/cookjohn/cnki-skills
       const n = Number(body.n); if (!Number.isInteger(n) || n < 1 || n > 5) return err(400, '只能是 1 到 5');
       settings.parallel = n; save(); tasks.kick(); return ok(config());
     }
-    if (route === 'env/openalex' && method === 'POST') { try { oaSave(body || {}); return ok({}); } catch (e) { return err(400, e.message); } }
     if (route === 'env/install' && method === 'POST') {
       const it = INSTALL[body.what]; if (!it) return err(400, '没有这一项');
       const inbox = projects.list().find(x => x.inbox); if (!inbox) return err(400, '找不到收件箱');
@@ -1188,14 +1072,14 @@ https://github.com/cookjohn/cnki-skills
       return ok({ source: v });
     }
     if (route === 'env/install-skills' && method === 'POST') {
-      if (body.what !== 'course' && !SKILL_REPOS[body.what]) return err(400, '没有这一项');
+      if (body.what !== 'course') return err(400, '没有这一项');
       if (!BASE_ENGINES[body.engine] || !isOn(body.engine)) return err(400, '没有这个 AI 程序，或者它没有启用');
-      return ok({ ...(await installSkills(body.what, body.engine)), config: config() });
+      return ok({ ...(await installSkills(body.engine)), config: config() });
     }
     // 「复制指令」：手动拿到 Claude Code / Codex 客户端里装
     if (route === 'env/install-text' && method === 'GET') {
       if (!INSTALL[body.what]) return err(400, '没有这一项');
-      return ok({ text: installText(body.what, BASE_ENGINES[body.engine] ? body.engine : settings.engine, CLIENT_ONLY.includes(body.what)) });
+      return ok({ text: installText(body.what, BASE_ENGINES[body.engine] ? body.engine : settings.engine) });
     }
     if (route === 'skills/all' && method === 'GET') { const p = projects.get(body.project); return ok(skillCatalog(p && p.exists ? p.path : '')); }
     if (route === 'skills' && method === 'GET') { const p = projects.get(body.project); return ok(p && p.exists ? installedSkills(engineOf(p), p.path) : []); }
@@ -1377,7 +1261,7 @@ https://github.com/cookjohn/cnki-skills
     }
     if (route === 'engine' && method === 'POST') {
       if (!ENGINES[body.engine]) return err(400, '没有这个引擎');
-      if (!isOn(body.engine)) return err(400, '这个 AI 程序没有启用：先在「AI学术环境配置」里启用它');
+      if (!isOn(body.engine)) return err(400, `这个 AI 程序没有启用：先在「${CFG}」里启用它`);
       if (body.ackRisk) settings.ack[body.engine] = true;
       settings.engine = body.engine; save(); for (const x of Object.keys(ENGINES)) if (found[x]) found[x].info.isDefault = settings.engine === x; return ok(config());
     }
@@ -1429,7 +1313,7 @@ https://github.com/cookjohn/cnki-skills
           else if (a.type === 'triage') out = await handle({ method: 'POST', route: 'inbox/triage', body: {} });
           else if (a.type === 'tool') out = createRun({ project: t.project, tool: a.id, values: a.vals || {}, pins: a.pins || [] });
           else if (a.type === 'go') {
-            if (Date.now() - deskSeen > 90000) return err(409, '这一步是工作流里的一个阶段，要电脑上的 POPPER 窗口来开始，窗口现在没开着：在电脑上打开 POPPER 窗口后再点一次');
+            if (Date.now() - deskSeen > 90000) return err(409, `这一步是工作流里的一个阶段，要电脑上的 ${APP} 窗口来开始，窗口现在没开着：在电脑上打开 ${APP} 窗口后再点一次`);
             const key = t.id + ':' + Date.now();
             remoteActs.push({ key, at: Date.now(), id: t.id, project: t.project, act: { ...a, run: true } }); todos.started(t.id);
             return ok({ sent: key });
@@ -1466,10 +1350,10 @@ ${projects.list().filter(x => x.exists).map(x => x.inbox ? `- [id:${x.id}] 收�
       const list = (settings.pinnedTools || []).filter(id => id !== body.id);
       settings.pinnedTools = body.pinned ? [...list, body.id] : list; save(); return ok(config());
     }
-    // 右栏那位 AI 的名字（学员自己起，默认 Research Agent；10-17 界面升级）
+    // 右栏那位 AI 的名字（学员自己起，默认「App 名 Agent」，到手是 My App Agent；10-17 界面升级，10-30 改默认）
     if (route === 'agent-name' && method === 'POST') {
       const name = String(body.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 24);
-      if (name && name !== 'Research Agent') settings.agentName = name; else delete settings.agentName;
+      if (name && name !== AGENT) settings.agentName = name; else delete settings.agentName;
       save(); return ok(config());
     }
     if (route === 'model' && method === 'POST') {
